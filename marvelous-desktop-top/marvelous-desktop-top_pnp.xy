@@ -1,0 +1,11 @@
+# Pick And Place List
+# eMail=
+#
+# Project=marvelous-desktop-top
+# Date=21:28:44
+# CreatedBy=Fritzing 1.0.6.2025-10-07.1.0.5rc1-97-g04e5bb02
+#
+# Coordinates in mils, always center of component
+# Origin 0/0=Lower left corner of PCB. Rotation in degree (0-360, math. pos.)
+RefDes,Description,Package,X,Y,Rotation,Side,Mount
+Description: resistance;capacitance;inductance;voltage;current;power;mpn;mn;

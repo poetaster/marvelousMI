@@ -1,0 +1,56 @@
+# Pick And Place List
+# eMail=
+#
+# Project=marvelous-desktop
+# Date=21:10:13
+# CreatedBy=Fritzing 1.0.6.2025-10-07.1.0.5rc1-97-g04e5bb02
+#
+# Coordinates in mils, always center of component
+# Origin 0/0=Lower left corner of PCB. Rotation in degree (0-360, math. pos.)
+RefDes,Description,Package,X,Y,Rotation,Side,Mount
+Description: resistance;capacitance;inductance;voltage;current;power;mpn;mn;
+OLED,";;;;;;;;","",1465.46,2107.82,0,Top,MANUAL
+D4149,";;;;;;;;","diode-1n4148",52.9656,369.99,90,Top,SMT
+J11,";;;;;;;;","audio-jack-3.5mm-smd",826.957,140.221,-90,Top,SMT
+3.3v,";;;;;;;;","diode-zener",1478.82,665.312,180,Top,SMT
+3.3v,";;;;;;;;","diode-zener",1759.17,521.501,90,Top,SMT
+3.3v,";;;;;;;;","diode-zener",1861.2,577.168,90,Top,SMT
+3.3v,";;;;;;;;","diode-zener",2149.19,712.679,90,Top,SMT
+3.3v,";;;;;;;;","diode-zener",2335.3,1155.69,-90,Top,SMT
+3.3v,";;;;;;;;","diode-zener",2140.86,1467.53,-90,Top,SMT
+3.3v,";;;;;;;;","diode-zener",1660.63,2469.87,0,Top,SMT
+220,"220;;;;;0.25W;;;","THT",143.721,366.778,-90,Top,THT
+6N138,";;;;;;;;","DIP (Dual Inline) [THT]",392.788,215.134,-90,Top,THT
+104,";100nF;;35V;;;;;","200 mil [THT, multilayer]",331.332,656.09,0,Top,THT
+Left,";;;;;;;;","THT",829.332,592.812,180,Top,THT
+4.7k,"4.7k;;;;;0.25W;;;","THT",1226.77,237.578,-90,Top,THT
+J7,";;;;;;;;","THT",572.91,894.245,0,Top,THT
+Right,";;;;;;;;","THT",829.332,797.245,180,Top,THT
+J8,";;;;;;;;","THT",307.728,1543.5,90,Top,THT
+4.7k,"4.7k;;;;;0.25W;;;","THT",1605.5,330.067,-90,Top,THT
+104,";100nF;;35V;;;;;","100 mil [THT, multilayer]",231.454,1711.62,-90,Top,THT
+3.3k,"3.3k;;;;;0.25W;;;","THT",1908.01,86.0563,180,Top,THT
+100uF,";0.1mF;;35V;;;;;","100 mil [THT, electrolytic]",482.588,1710.21,-90,Top,THT
+RE4,";;;;;;;;","THT",345.494,2067.52,-90,Top,THT
+J10,";;;;;;;;","THT",1008.07,1407.8,0,Top,THT
+4.7k,"4.7k;;;;;0.25W;;;","THT",2171.48,264.856,0,Top,THT
+3.3k,"3.3k;;;;;0.25W;;;","THT",2286.71,174.012,180,Top,THT
+4.7k,"4.7k;;;;;0.25W;;;","THT",2197.68,350.212,180,Top,THT
+CV6,";;;;;;;;","THT",2606.8,153.801,0,Top,THT
+3.3k,"3.3k;;;;;0.25W;;;","THT",2322.68,685.767,90,Top,THT
+CV5,";;;;;;;;","THT",2606.8,441.278,0,Top,THT
+4.7k,"4.7k;;;;;0.25W;;;","THT",2612.49,607.134,0,Top,THT
+3.3k,"3.3k;;;;;0.25W;;;","THT",2206.01,1090.85,90,Top,THT
+CV4,";;;;;;;;","THT",2606.8,755.545,0,Top,THT
+4.7k,"4.7k;;;;;0.25W;;;","THT",2423.6,1012.15,-90,Top,THT
+J9,";;;;;;;;","THT",2041.4,1407.8,0,Top,THT
+CV3,";;;;;;;;","THT",2606.8,1053.47,0,Top,THT
+1.1k,"4.7k;;;;;0.25W;;;","THT",2246.75,1479.92,90,Top,THT
+3.3k,"3.3k;;;;;0.25W;;;","THT",2431.01,1406.03,90,Top,THT
+CV2,";;;;;;;;","THT",2606.8,1366.76,0,Top,THT
+RE3,";;;;;;;;","THT",3079.6,900.306,90,Top,THT
+2.2k,"3.3k;;;;;0.25W;;;","THT",2334.71,1692.8,90,Top,THT
+CV1,";;;;;;;;","THT",2606.8,1704.25,0,Top,THT
+RE2,";;;;;;;;","THT",3082.47,1493.14,90,Top,THT
+Trig,";;;;;;;;","THT",2606.8,2284.25,0,Top,THT
+RE1,";;;;;;;;","THT",3067.13,2095.14,90,Top,THT
