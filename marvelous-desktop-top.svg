@@ -23,14 +23,14 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="1.4763259"
-     inkscape:cx="147.32519"
-     inkscape:cy="80.266829"
-     inkscape:window-width="1680"
-     inkscape:window-height="1050"
-     inkscape:window-x="1920"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1"
+     inkscape:zoom="1.8712141"
+     inkscape:cx="268.80944"
+     inkscape:cy="37.943281"
+     inkscape:window-width="1757"
+     inkscape:window-height="935"
+     inkscape:window-x="1650"
+     inkscape:window-y="66"
+     inkscape:window-maximized="0"
      inkscape:current-layer="layer1"
      width="88mm"
      fit-margin-top="0"
@@ -88,7 +88,7 @@
     <g
        partID="871273142"
        id="g40069"
-       transform="matrix(0.23584175,0,0,0.28487791,9.043044,1.4480709)"
+       transform="matrix(0.23584175,0,0,0.28487791,9.043044,7.7980695)"
        style="stroke-width:1.36101">
       <g
          transform="translate(48.6783,13.2357)"
@@ -225,7 +225,7 @@
     <g
        partID="872164341"
        id="g80979"
-       transform="matrix(0.79659502,0,0,0.79659502,2.1116691,7.1047104)"
+       transform="matrix(0.79659502,0,0,0.79659502,2.1092159,5.4868644)"
        style="display:inline;stroke-width:0.442857">
       <g
          transform="translate(2.37817,0.5928)"
@@ -329,6 +329,10 @@
        id="rect83790"
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264999"
        d="m 63.675674,58.13847 h 5.601701 v 5.62093 h -5.601701 z" />
+    <path
+       id="path15881"
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.264999"
+       d="m 63.673157,35.271484 h 5.6017 v 5.620931 h -5.6017 z" />
   </g>
   <g
      inkscape:groupmode="layer"
