@@ -96,6 +96,10 @@ void displayPlaits() {
   display.setCursor(line_2_3.x, line_2_3.y);
   display.print("T");
   //display.print(timbre_in);
+  // play/pause
+  display.setCursor(line_3_1.x, line_3_1.y);
+  display.print(eeprom_error);
+
   updateGauges();
   display.display();
 }
@@ -141,7 +145,7 @@ void displayRings() {
 
   // play/pause
   display.setCursor(line_3_1.x, line_3_1.y);
-  display.print("FOOBAR");
+  display.print(eeprom_error);
   //display.print(display_mode);
 
   updateGauges();

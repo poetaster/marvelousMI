@@ -16,12 +16,12 @@ bool debug = false;
 #include "hardware/gpio.h"
 #include "hardware/sync.h"
 #include <hardware/pwm.h>
-
-//#include <LittleFS.h>
+#include <EEPROM.h>
 
 #include <iostream>
 #include <vector>
 #include <algorithm>
+
 //#include <Wire.h>
 
 #include <SoftwareSerial.h>
@@ -35,7 +35,7 @@ bool debug = false;
 using Transport = MIDI_NAMESPACE::SerialMIDI<SoftwareSerial>;
 int rxPin = 1;
 int txPin = 3;
-SoftwareSeria~/src/arduinoMI/MarvelousMIl mySerial = SoftwareSerial(rxPin, txPin); //thruActivated
+SoftwareSerial mySerial = SoftwareSerial(rxPin, txPin); //thruActivated
 Transport serialMIDI(mySerial);
 MIDI_NAMESPACE::MidiInterface<Transport> MIDI((Transport&)serialMIDI);
 
@@ -55,14 +55,16 @@ I2S DAC(OUTPUT, pBCLK, pDOUT);
 // create ADSR env
 #include "ADSR.h"
 ADSR *env = new ADSR();
-bool envRelease = false;
+float envAttack;
+float envDecay;
+int envRelease;
+float envSustain;
 long envTimer = 0;
 
 
 
 // utility
-double randomDouble(double minf, double maxf)
-{
+double randomDouble(double minf, double maxf) {
   return minf + random(1UL << 31) * (maxf - minf) / (1UL << 31);  // use 1ULL<<63 for max double values)
 }
 
@@ -103,8 +105,6 @@ float mapping_lower_limit = 5; //36.0f;
 #define CV4 (45u)
 #define CV5 (46u)
 #define CV6 (47u)
-
-
 
 int cv_ins[6] = {CV1, CV2, CV3, CV4, CV5, CV6};
 int cv_avg = 15;
@@ -147,27 +147,29 @@ float pos_mod = 0.0f;
 
 int engine_in;
 char engine_name;
+int bpm;
+int selected_preset;
 
 // persist plaits 
 float plaits_morph = morph_in;
 float plaits_harm = harm_in;
 float plaits_timbre = timbre_in;
 float plaits_position = position_in;
+float plaits_level = 1.0f;
 int   plaits_engine = 0;
-
-
 // persist Rings 
 float rings_position = 0.25f; // position
 float rings_morph = morph_in;
 float rings_harm = harm_in;
 float rings_timbre = timbre_in;
+float rings_level = 1.0f;
 int   rings_engine = 0;
-
 // persist braids
 float braids_timbre = timbre_in;
 float braids_morph = morph_in;
+float braids_harm = harm_in;
 int   braids_engine = 0;
-
+float braids_level = 1.0f;
 // persist global
 float fm_mod = 0.0f ; //IN(7);
 float timb_mod = 0.0f; //IN(8);
@@ -176,17 +178,17 @@ float decay_in = 0.5f; // IN(10);
 float lpg_in = 0.2f ;// IN(11);
 float pitch_in = 32.0f;
 int max_engines = 21; // varies per backend
-
-
 // persist clouds
 float clouds_morph = morph_in;
 float clouds_timbre = timbre_in;
 float clouds_harm = harm_in;
-float clouds_pos = position_in;
+float clouds_position = position_in;
 float clouds_mode = engine_in;
 float clouds_dw_in = 1.0f;
 float clouds_pos_in = 0.0f;
 int   clouds_engine = 0;
+float clouds_level = 1.0f;
+
 bool  freeze_in = false;
 int   voice_in = 4;
 
@@ -214,12 +216,9 @@ bool trigger_on = false;
 #include "midi.h"
 
 #include "names.h"
+int device_initialized = 0 ; // used to identify if the eeprom has been written.
+#include "eeprom.h"
 
-volatile int counter = 0;
-volatile int repeat = 32;
-
-int addr = 0; // for writing to flash
-int wrote = 0;
 bool writing = false;
 bool reading = false;
 
@@ -249,107 +248,6 @@ int enc3_pos_last = 0;
 int enc3_delta = 0;
 int enc4_pos_last = 0;
 int enc4_delta = 0;
-
-// called at voice chage to save current values of all voices.
-// using the eeprom fake, we have the last 512 bytes, much more than we need
-/*
-  void writeSettings() {
-
-  int val; // reuse
-  addr = 0;
-  writing = true; // to stop other actitiy
-  // open for writing
-  File settings = LittleFS.open(F("/settings.txt"), "w");
-
-  // We simply print an int at a time, each on a new line.
-  //plaits
-  val = (int) plaits_morph * 100;
-  settings.print(val);
-  val =  (int) plaits_harm * 100;
-  settings.print(val);
-  val =  (int) plaits_timbre * 100;
-  settings.print(val);
-  val =  (int) plaits_engine;
-  settings.print(val);
-
-
-  //rings
-  val =  (int) rings_morph * 100;
-  settings.print(val);
-  val =  (int) rings_harm * 100;
-  settings.print(val);
-  val =  (int) rings_timbre * 100;
-  settings.print(val);
-  val =  (int) rings_pos * 100;
-  settings.print(val);
-  val =  (int) rings_engine;
-  settings.print(val);
-
-
-  //braids
-  val =  (int) braids_timbre * 100;
-  settings.print(val);
-  val =  (int) braids_morph * 100;
-  settings.print(val);
-  val =  (int) braids_engine;
-  settings.print(val);
-
-
-  //  finally, commit
-  settings.close();
-  writing = false;
-
-
-  }
-
-  // called at system setup to initialize from saved values.
-  void readSettings() {
-
-  int val; // reuse
-  File settings = LittleFS.open(F("/settings.txt"), "r");
-
-  // serial parseInt() calls will do an int a line at a time.
-
-  //plaits
-  val = settings.parseInt();
-
-  // first check if the first values is set
-  if (val > 1) {
-    // we have a value, read the rest
-    if (val > 0) plaits_morph = (float) val / 100;
-    val = settings.parseInt();
-    if (val > 0) plaits_harm = (float) val / 100;
-    val = settings.parseInt();
-    if (val > 0) plaits_timbre = (float) val / 100;
-    val = settings.parseInt();
-    plaits_engine = val;
-
-    //rings
-    val = settings.parseInt();
-    if (val > 0) rings_morph = (float)val / 100;
-    val = settings.parseInt();
-    if (val > 0) rings_harm = (float)val / 100;
-    val = settings.parseInt();
-    if (val > 0) rings_timbre = (float)val / 100;
-    val = settings.parseInt();
-    if (val > 0) rings_pos = (float)val / 100;
-    val = settings.parseInt();
-    rings_engine = val;
-
-
-    //braids
-    val = settings.parseInt();
-    if (val > 0) braids_timbre = (float)val / 100;
-    val = settings.parseInt();
-    if (val > 0) braids_morph = (float)val / 100;
-    val = settings.parseInt();
-    braids_engine = val;
-  } else {
-    writeSettings(); // initialize should only happen once.
-  }
-
-  }
-*/
 
 
 uint32_t enc1_push_millis;
@@ -395,7 +293,7 @@ unsigned long btnTwoLastTime;
 unsigned long btnFourLastTime;
 int32_t previous_pitch = 40;
 
-bool just_booting = false;
+bool just_booting = true;
 
 //File settingsFile;
 
@@ -446,7 +344,6 @@ void setup() {
   pinMode(CV4, INPUT);
   pinMode(CV5, INPUT);
   pinMode(CV6, INPUT);
-
   // trigger in
   pinMode(41u, INPUT);
 
@@ -487,12 +384,15 @@ void setup() {
   btn_two.setPressedState(LOW);
 
 
-  // initialize enveloope settings
-
-  env->setAttackRate(.05 * SAMPLERATE);  // .01 second
-  env->setDecayRate(.3 * SAMPLERATE);
-  env->setReleaseRate(5 * SAMPLERATE);
-  env->setSustainLevel(.8);
+  // initialize envelope settings
+  envAttack = 0.05f;
+  envDecay = 0.3f;
+  envRelease = 5;
+  envSustain = 0.8f;
+  env->setAttackRate(envAttack * SAMPLERATE);  // .01 second
+  env->setDecayRate(envDecay * SAMPLERATE);
+  env->setReleaseRate(envRelease * SAMPLERATE);
+  env->setSustainLevel(envSustain);
 
 
   // initialize a mode to play
@@ -519,10 +419,38 @@ void setup() {
   btn_four.update();
 
   // let's see, seems to be too slow
-  //LittleFS.begin();
   //readSettings(); // try to retrieve the voice settings from last session.
-  
-/*
+  EEPROM.begin(2048);
+  delay(50);
+  // we read the first byte to try to get a preset, stored 0-7
+  if (just_booting) {
+    loadInit();
+    if (device_initialized == 7 ) {
+      // only one for now 
+      //loadLastPreset(); // sets selected_preset from base eeprom save point
+      loadMemorySlots();
+	  updateValues();
+      //loadFromMemorySlot(0);
+	  /*
+      if (selected_preset > -1 && selected_preset < 8) {
+        loadFromMemorySlot(selected_preset);
+      } else {
+        loadFromMemorySlot(0);
+      }*/
+    } else {
+      // first use of device, so prep it.
+      selected_preset = 0;
+      currentConfig = defaultSlots[0]; // current config is default 0
+      initializeEEPROM(); // first run, get settings into all 8 slots
+      //bpm = currentConfig.tempo;
+      //internalClock = currentConfig.internalClock;
+      writeInit(); // set flag so we don't repeat
+    }
+
+    just_booting = false;
+  }
+
+  /*
   int sensorValue;
 
   // calibrate note in CV1
@@ -582,14 +510,7 @@ void loop() {
 
 
 
-    //counter = 0; // increments on each pass of the timer when the timer writes
   }
-
-  /*
-    if (writing) {
-      writeSettings(); // after switching, save this state to flash.
-    }
-  */
 
   /*
      disabled clouds
@@ -631,13 +552,10 @@ void loop1() {
 
   if (! writing) { // don't do shit when eeprom is being written
 
-
-
     // we need these on boot so the second loop can catch the startup button.
     btn_one.update();
     btn_two.update();
     btn_four.update();
-
 
     // at boot permit octave down
     if (just_booting && btn_one.pressed()) {
@@ -662,7 +580,7 @@ void loop1() {
     }
     read_trigger();
     MIDI.read();
-    
+
     if ( now - update_timer > 5 ) {
       read_cv();
       read_buttons();
@@ -676,7 +594,7 @@ void loop1() {
       } else {
         displayUpdate();
       }
-      
+
       update_timer = now;
     }
   }
@@ -741,9 +659,11 @@ void read_buttons() {
       clouds_morph = morph_in;
       clouds_timbre = timbre_in;
       clouds_harm = harm_in;
-      clouds_pos = position_in;
+      clouds_position = position_in;
       clouds_engine = engine_in;
     }
+    // Save to eeprom
+    saveToEEPROM(0);
 
     voice_number++;
 
@@ -751,14 +671,14 @@ void read_buttons() {
 
     if (voice_number == 0) {
       engine_in = plaits_engine; // engine_in % 17;
-      max_engines = 21; // was 15
+      max_engines = 21; 
       morph_in = plaits_morph;
       timbre_in = plaits_timbre;
       harm_in = plaits_harm;
       position_in = plaits_position;
 
     } else if (voice_number == 1) {
-      engine_in = rings_engine; // % 6;
+      engine_in = rings_engine; 
       max_engines = 5;
       morph_in = rings_morph;
       harm_in = rings_harm;
@@ -766,13 +686,13 @@ void read_buttons() {
       position_in = rings_position;
 
     } else if (voice_number == 2 ) {
-      engine_in = braids_engine; // engine_in % 46;
+      engine_in = braids_engine; 
       max_engines = 45;
       morph_in = braids_morph;
       timbre_in = braids_timbre;
 
     } else if (voice_number == 3 ) { // not used
-      engine_in = clouds_engine; // engine_in % 46;
+      engine_in = clouds_engine; 
       max_engines = 3;
       morph_in = clouds_morph;
       timbre_in = clouds_timbre;
@@ -866,14 +786,16 @@ void read_cv() {
   int16_t timbre = avg_cv(CV2);
   timb_mod = (float)timbre;
   timb_mod = mapf( timb_mod, 5.0f, 4090.0f, 0.00f, 1.00f);
+  timb_mod = constrain(timb_mod, 0.00f, 1.00f);
 
   int16_t morph = avg_cv(CV3) ;
   morph_mod = (float) morph;
-  morph_mod = mapf ( (float) morph_mod, 5.0f, 4090.0f, 0.00f, 1.000f);
+  morph_mod = mapf ( (float) morph_mod, 5.0f, 4090.0f, 0.00f, 1.00f);
+  morph_mod = constrain(morph_mod, 0.00f, 1.00f);
 
   // don't remember if this was important
   float pos = avg_cv(CV4) * 1.0f ; // f&d noise floor
-  pos_mod = mapf (  pos, 5.0f, 4090.0f, 0.00f, 1.000f);
+  pos_mod = mapf (  pos, 5.0f, 4090.0f, 0.00f, 1.00f);
   pos_mod = constrain(pos, 0.00f, 1.00f);
 
   // plaits
