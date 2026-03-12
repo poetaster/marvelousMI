@@ -7,7 +7,7 @@
       Copyright (c)  2020 (emilie.o.gillet@gmail.com)
 */
 
-bool debug = false;
+bool debug = true;
 
 #include <Arduino.h>
 #include <math.h>
@@ -239,7 +239,7 @@ PioEncoder enc3(36, PIO pio1);
 
 #include <RotaryEncoder.h>
 // Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
-RotaryEncoder enc4( 6,  7,  RotaryEncoder::LatchMode::TWO03);
+RotaryEncoder enc4( 6,  7,  RotaryEncoder::LatchMode::FOUR3);
 
 int enc1_pos_last = 0;
 int enc1_delta = 0;
@@ -830,7 +830,7 @@ void read_encoders() {
   }
 
   if ( enc1_delta) {
-    float turn = ( enc1_delta * 0.003f ) + timbre_in;
+    float turn = ( enc1_delta * 0.005f ) + timbre_in;
     CONSTRAIN(turn, 0.f, 1.0f)
     if (debug) Serial.println(turn);
     timbre_in = turn;
@@ -849,7 +849,7 @@ void read_encoders() {
   }
 
   if (enc2_delta) {
-    float turn = ( enc2_delta * 0.003f ) + morph_in;
+    float turn = ( enc2_delta * 0.005f ) + morph_in;
     CONSTRAIN(turn, 0.f, 1.0f)
     if (debug) Serial.println(turn);
     morph_in = turn;
@@ -868,7 +868,7 @@ void read_encoders() {
   }
 
   if (enc3_delta) {
-    float turn = ( enc3_delta * 0.0031f ) + harm_in;
+    float turn = ( enc3_delta * 0.005f ) + harm_in;
     CONSTRAIN(turn, 0.f, 1.0f)
     if (debug) Serial.println(turn);
     harm_in = turn;
@@ -880,16 +880,15 @@ void read_encoders() {
   int enc4_pos = enc4.getPosition();
 
   if ( enc4_pos != enc4_pos_last ) {
+    if (debug) Serial.print("enc4pos");
+    if (debug) Serial.println(enc4_pos);
     engineCount =  (int) enc4.getDirection()  + engineCount ;
-    if (engineCount > max_engines) {
-      engineCount = 0;
-    }
-    if (engineCount < 0 ) {
+    if (debug) Serial.println(engineCount);
+
+    if (engineCount < 0) {
       engineCount = max_engines;
-    }
-    // plaits is tricky
-    if (voice_number == 0) {
-      //changePlaitsEngine(engineCount);
+    } else if (engineCount > max_engines) {
+      engineCount = 0;
     }
     engine_in = engineCount;
   }
