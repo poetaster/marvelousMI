@@ -36,20 +36,20 @@ typedef struct {
 const int step_text_pos[] = { 0, 15, 16, 15, 32, 15, 48, 15, 64, 15, 80, 15, 96, 15, 112, 15 };
 
 const pos_t line_1_1    = {.x = 0,  .y = 8, .str = "bpm:%3d" };
-const pos_t line_1_2  = {.x = 40, .y = 8, .str = "trs:%+2d" };
-const pos_t line_1_3  = {.x = 80, .y = 8, .str = "seq:%d" };
+const pos_t line_1_2  = {.x = 36, .y = 8, .str = "trs:%+2d" };
+const pos_t line_1_3  = {.x = 72, .y = 8, .str = "seq:%d" };
 const pos_t line_2_1    = {.x = 0,  .y = 19, .str = "" };
-const pos_t line_2_2   = {.x = 40, .y = 19, .str = "" };
-const pos_t line_2_3   = {.x = 80, .y = 19, .str = "" };
+const pos_t line_2_2   = {.x = 36, .y = 19, .str = "" };
+const pos_t line_2_3   = {.x = 72, .y = 19, .str = "" };
 const pos_t line_3_1 = { .x = 0, .y = 27,  .str = "" };
-const pos_t line_3_2 = { .x = 40, .y = 27, .str = "" };
+const pos_t line_3_2 = { .x = 36, .y = 27, .str = "" };
 const pos_t line_3_3 = { .x = 100, .y = 27,  .str = "" };
 
 const pos_t oct_text_offset = { .x = 3, .y = 10,  .str = "" };
 const pos_t gate_bar_offset = { .x = 0, .y = -15, .str = "" };
 const pos_t edit_text_offset = { .x = 3, .y = 22,  .str = "" };
 
-const int gate_bar_width = 14;Image & Video editors, German Weather Service... etc.
+const int gate_bar_width = 14;
 const int gate_bar_height = 4;
 
 void updateGauges() {
