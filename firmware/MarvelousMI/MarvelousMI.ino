@@ -7,7 +7,7 @@
       Copyright (c)  2020 (emilie.o.gillet@gmail.com)
 */
 
-bool debug = true;
+bool debug = false;
 
 #include <Arduino.h>
 #include <math.h>
@@ -608,6 +608,7 @@ void read_buttons() {
 
   }
 
+  // meta button pressed to cycle through voices
   if (btn_four.rose()) {
     // first record our last settings
     if (voice_number == 0) {
@@ -819,7 +820,7 @@ int16_t avg_cv(int cv_in) {
 
 void read_encoders() {
 
-  // enc4 is an exceptoin
+  // enc4 meta is an exceptoin
   enc4.tick();
 
   // first encoder
@@ -835,8 +836,6 @@ void read_encoders() {
     if (debug) Serial.println(turn);
     timbre_in = turn;
   }
-
-
   /// only set new pos last after buttons have had a chance to use the delta
   enc1_delta = 0;
   enc1_pos_last = enc1_pos;
@@ -859,14 +858,11 @@ void read_encoders() {
   enc2_delta = 0;
 
   // third encoder
-
   int enc3_pos = enc3.getCount() / 4;
-
   if ( enc3_pos != enc3_pos_last ) {
     enc3_delta = (enc3_pos - enc3_pos_last);
 
   }
-
   if (enc3_delta) {
     float turn = ( enc3_delta * 0.005f ) + harm_in;
     CONSTRAIN(turn, 0.f, 1.0f)
@@ -876,15 +872,10 @@ void read_encoders() {
   enc3_pos_last = enc3_pos;
   enc3_delta = 0;
 
-
+  // meta encoder turned to cycle through voice engines
   int enc4_pos = enc4.getPosition();
-
   if ( enc4_pos != enc4_pos_last ) {
-    if (debug) Serial.print("enc4pos");
-    if (debug) Serial.println(enc4_pos);
     engineCount =  (int) enc4.getDirection()  + engineCount ;
-    if (debug) Serial.println(engineCount);
-
     if (engineCount < 0) {
       engineCount = max_engines;
     } else if (engineCount > max_engines) {
