@@ -168,6 +168,7 @@ int   rings_engine = 0;
 float braids_timbre = timbre_in;
 float braids_morph = morph_in;
 float braids_harm = harm_in;
+float braids_position = position_in;
 int   braids_engine = 0;
 float braids_level = 1.0f;
 // persist global
@@ -348,18 +349,9 @@ void setup() {
   pinMode(41u, INPUT);
 
   // DISPLAY
-
   Wire.setSDA(oled_sda_pin);
   Wire.setSCL(oled_scl_pin);
   Wire.begin();
-
-  MIDI.setHandleNoteOn(HandleMidiNoteOn);  // Put only the name of the function
-  MIDI.setHandleNoteOff(HandleMidiNoteOff);  // Put only the name of the function
-  MIDI.setHandleControlChange(HandleControlChange);  // Put only the name of the function
-  // Initiate MIDI communications, listen to all channels (not needed with Teensy usbMIDI)
-
-  MIDI.begin(MIDI_CHANNEL_OMNI);
-
   // SSD1306 --  or SH1106 in this case
   if (!display.begin(SSD1306_SWITCHCAPVCC, oled_i2c_addr)) {
     //if (!display.begin( oled_i2c_addr)) {
@@ -413,30 +405,22 @@ void setup() {
   update_timer = millis();
   button_timer = millis();
 
-  just_booting = true;
+
   btn_one.update();
   btn_two.update();
   btn_four.update();
 
-  // let's see, seems to be too slow
-  //readSettings(); // try to retrieve the voice settings from last session.
+  // used to indicated we can fetch saved settings
+  just_booting = true;
   EEPROM.begin(2048);
-  delay(50);
-  // we read the first byte to try to get a preset, stored 0-7
+  delay(150);
+
   if (just_booting) {
     loadInit();
-    if (device_initialized == 7 ) {
+    if (device_initialized == 1 ) {
       // only one for now 
       //loadLastPreset(); // sets selected_preset from base eeprom save point
       loadMemorySlots();
-	  updateValues();
-      //loadFromMemorySlot(0);
-	  /*
-      if (selected_preset > -1 && selected_preset < 8) {
-        loadFromMemorySlot(selected_preset);
-      } else {
-        loadFromMemorySlot(0);
-      }*/
     } else {
       // first use of device, so prep it.
       selected_preset = 0;
@@ -444,11 +428,18 @@ void setup() {
       initializeEEPROM(); // first run, get settings into all 8 slots
       //bpm = currentConfig.tempo;
       //internalClock = currentConfig.internalClock;
-      writeInit(); // set flag so we don't repeat
+      writeInit(); // set flag for next boot
     }
 
     just_booting = false;
   }
+
+  // set up midi last, debugging
+  MIDI.setHandleNoteOn(HandleMidiNoteOn);  // Put only the name of the function
+  MIDI.setHandleNoteOff(HandleMidiNoteOff);  // Put only the name of the function
+  MIDI.setHandleControlChange(HandleControlChange);  // Put only the name of the function
+  // Initiate MIDI communications, listen to all channels (not needed with Teensy usbMIDI)
+  MIDI.begin(MIDI_CHANNEL_OMNI);
 
   /*
   int sensorValue;
@@ -463,7 +454,7 @@ void setup() {
     }
 
     // record the minimum sensor value
-    if (sensorValue < mapping_lower_limit) {
+    if (sensorValue < mapping_lower_limit) {all tabs to spaces
       mapping_lower_limit = sensorValue;
     }
   }
@@ -471,9 +462,7 @@ void setup() {
 
 }
 
-
 // main loop for audio rendering
-
 void loop() {
 
   if ( DAC.availableForWrite()) {
@@ -539,30 +528,17 @@ void loop() {
     }*/
 }
 
-
-
 void setup1() {
   delay (1000); // wait for main core to start up perhipherals
 }
 
-
-
 // second core deals with ui / control rate updates
 void loop1() {
-
-  if (! writing) { // don't do shit when eeprom is being written
-
+  if (! writing) { // don't do shit when eeprom is being written1.00
     // we need these on boot so the second loop can catch the startup button.
     btn_one.update();
     btn_two.update();
     btn_four.update();
-
-    // at boot permit octave down
-    if (just_booting && btn_one.pressed()) {
-      pitch_offset = 36;
-    }
-
-    just_booting = false;
 
     unsigned long now = millis();
 
@@ -633,7 +609,6 @@ void read_buttons() {
   }
 
   if (btn_four.rose()) {
-
     // first record our last settings
     if (voice_number == 0) {
       plaits_morph = morph_in;
@@ -662,14 +637,32 @@ void read_buttons() {
       clouds_position = position_in;
       clouds_engine = engine_in;
     }
-    // Save to eeprom
-    saveToEEPROM(0);
 
     voice_number++;
-
     if (voice_number > 2) voice_number = 0;
+    // Save to eeprom
+    saveToEEPROM(0);
+    setVoiceParameters();
+  }
 
-    if (voice_number == 0) {
+  if (btn_one.pressed() && btn_two.pressed()) {
+    // rings easter egg mode/ fm engine.
+    easterEgg = !easterEgg;
+    doublePressMode = true;
+  }
+
+  if (!doublePressMode && !longPress) {
+    // being tripple shure :)
+
+  }
+}
+
+/*
+ *  set the globals to values from last saved voice parameters
+ */
+
+void setVoiceParameters(){
+  if (voice_number == 0) {
       engine_in = plaits_engine; // engine_in % 17;
       max_engines = 21; 
       morph_in = plaits_morph;
@@ -697,20 +690,7 @@ void read_buttons() {
       morph_in = clouds_morph;
       timbre_in = clouds_timbre;
       harm_in = clouds_harm;
-
     }
-  }
-
-  if (btn_one.pressed() && btn_two.pressed()) {
-    // rings easter egg mode/ fm engine.
-    easterEgg = !easterEgg;
-    doublePressMode = true;
-  }
-
-  if (!doublePressMode && !longPress) {
-    // being tripple shure :)
-
-  }
 }
 
 float voct_midiBraids(int cv_in) {
@@ -742,8 +722,6 @@ void voct_midi(int cv_in) {
 
   }
 }
-
-
 
 // in marvelous, moved to digital pin tx/gp0
 void read_trigger() {
