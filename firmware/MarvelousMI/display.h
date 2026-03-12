@@ -11,13 +11,9 @@ uint8_t display_repeats = 0;
 
 int32_t display_timer;
 
-
-
 /* draw a circle gauge 8 pixels line in a half circle.
     int data curren value, 1 - 100
     int centerX, centerY, placement on screen assuming 128x32
-
-
 */
 void drawCircle( int data, int centerX = 64, int centerY = 16) {
   int pointerLength = 6;
@@ -40,20 +36,20 @@ typedef struct {
 const int step_text_pos[] = { 0, 15, 16, 15, 32, 15, 48, 15, 64, 15, 80, 15, 96, 15, 112, 15 };
 
 const pos_t line_1_1    = {.x = 0,  .y = 8, .str = "bpm:%3d" };
-const pos_t line_1_2  = {.x = 46, .y = 8, .str = "trs:%+2d" };
-const pos_t line_1_3  = {.x = 90, .y = 8, .str = "seq:%d" };
-const pos_t line_2_1    = {.x = 0,  .y = 18, .str = "" };
-const pos_t line_2_2   = {.x = 46, .y = 18, .str = "" };
-const pos_t line_2_3   = {.x = 90, .y = 18, .str = "" };
-const pos_t line_3_1 = { .x = 0, .y = 24,  .str = "" };
-const pos_t line_3_2 = { .x = 46, .y = 24, .str = "" };
-const pos_t line_3_3 = { .x = 90, .y = 24,  .str = "" };
+const pos_t line_1_2  = {.x = 40, .y = 8, .str = "trs:%+2d" };
+const pos_t line_1_3  = {.x = 80, .y = 8, .str = "seq:%d" };
+const pos_t line_2_1    = {.x = 0,  .y = 19, .str = "" };
+const pos_t line_2_2   = {.x = 40, .y = 19, .str = "" };
+const pos_t line_2_3   = {.x = 80, .y = 19, .str = "" };
+const pos_t line_3_1 = { .x = 0, .y = 27,  .str = "" };
+const pos_t line_3_2 = { .x = 40, .y = 27, .str = "" };
+const pos_t line_3_3 = { .x = 100, .y = 27,  .str = "" };
 
 const pos_t oct_text_offset = { .x = 3, .y = 10,  .str = "" };
 const pos_t gate_bar_offset = { .x = 0, .y = -15, .str = "" };
 const pos_t edit_text_offset = { .x = 3, .y = 22,  .str = "" };
 
-const int gate_bar_width = 14;
+const int gate_bar_width = 14;Image & Video editors, German Weather Service... etc.
 const int gate_bar_height = 4;
 
 void updateGauges() {
@@ -64,7 +60,7 @@ void updateGauges() {
     // harm
     drawCircle( harm_in * 100, line_2_2.x + 16, line_2_2.y );
     // position
-    drawCircle( position_in * 100, line_1_3.x + 16, line_1_3.y );
+    drawCircle( position_in * 100, line_3_3.x + 16, line_3_3.y );
   }
   //timbre
   drawCircle( timbre_in * 100, line_2_3.x + 16, line_2_3.y );
@@ -77,8 +73,8 @@ void displayPlaits() {
   display.setCursor(line_1_1.x, line_1_1.y);
   display.print(oscnames[engine_in]);
 
-  display.setCursor(line_1_3.x, line_1_3.y);
-  display.print("P");
+  //display.setCursor(line_1_3.x, line_1_3.y);
+  //display.print("p");
   //display.print(position_in);
 
   // morph
@@ -97,21 +93,16 @@ void displayPlaits() {
   display.print("T");
   //display.print(timbre_in);
   // play/pause
-  display.setCursor(line_3_1.x, line_3_1.y);
-  display.print(eeprom_error);
+  display.setCursor(line_3_3.x, line_3_3.y);
+  display.print("P");
 
   updateGauges();
   display.display();
 }
 
-
-
-
-
-
 void displayRings() {
   display.clearDisplay();
-    
+  display.setFont(&Org_01);
   // // name
   display.setCursor(line_1_1.x, line_1_1.y);
   if (easterEgg) {
@@ -120,20 +111,21 @@ void displayRings() {
     display.print(modelnames[engine_in]);
   }
 
-  display.setCursor(line_1_3.x, line_1_3.y);
-  display.print("P");
+  //display.setCursor(line_1_3.x, line_1_3.y);
+  //display.print("P");
   //display.print(position_in);
 
   //display.setCursor(line_1_2.x, line_1_2.y);
   //display.print(oscnames[engine_in]);
+  //
   // morph
   display.setCursor(line_2_1.x, line_2_1.y);
   display.print("M");
-  //display.print(morph_in, 4);
+
   // harmonics
   display.setCursor(line_2_2.x, line_2_2.y);
   display.print("H");
-  //display.print(harm_in, 4);  // user sees 1-8
+
   // timber
   display.setCursor(line_2_3.x, line_2_3.y);
   display.print("T");
@@ -143,18 +135,18 @@ void displayRings() {
   //display.print("P:");
   //display.print(voices[0].patch.note);
 
-  // play/pause
-  display.setCursor(line_3_1.x, line_3_1.y);
-  display.print(eeprom_error);
-  //display.print(display_mode);
+  // position
+  display.setCursor(line_3_3.x, line_3_3.y);
+  display.print("P");
 
   updateGauges();
   display.display();
 }
 
-/* original generic */
+/* braids */
 void displayBraids() {
   display.clearDisplay();
+  display.setFont(&Org_01);
   // // name
   display.setCursor(line_1_1.x, line_1_1.y);
   display.print(braidsnames[engine_in]);
@@ -186,6 +178,7 @@ void displayBraids() {
 /* original generic */
 void displayUpdate() {
   display.clearDisplay();
+  display.setFont(&Org_01);
   // // name
   display.setCursor(line_1_1.x, line_1_1.y);
   display.print(engine_in);

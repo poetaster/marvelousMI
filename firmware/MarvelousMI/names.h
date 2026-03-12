@@ -31,21 +31,21 @@ const size_t nameslength = sizeof(oscnames) / sizeof(oscnames[0]);
 
 
 const char* const modelnames[] = {
-  "MODAL_RESO",
-  "SYMPA_STRING",
-  "MODULATED_STRING",
-  "2-OP_FM_VOICE",
-  "SYMPATHETIC_STRING_Q",
-  "STRING_AND_REVERB"
+  "Modal Reso",
+  "Sympa String",
+  "Modulated String",
+  "2OP FM",
+  "Sympa String Q",
+  "String & Verb"
 };
  
 const char* const FXnames[] = {
-  "FX_FORMANT",
-  "FX_CHORUS",
-  "FX_REVERB",
-  "FX_FORMANT",
-  "FX_ENSEMBLE",
-  "FX_REVERB"
+  "FX Formant",
+  "FX Chorus",
+  "FX Reverb",
+  "FX Formant",
+  "FX Ensemble",
+  "FX Reverb"
 };
 
 
@@ -77,10 +77,10 @@ const char* const braidsnames[] = {
   "SAW_SWARM",
   "SAW_COMB",
   "TOY",
-  "DIGITAL_FILTER_LP",
-  "DIGITAL_FILTER_PK",
-  "DIGITAL_FILTER_BP",
-  "DIGITAL_FILTER_HP",
+  "LP FILTER",
+  "PK FILTER",
+  "BP FILTER",
+  "HP FILTER",
   "VOSIM",
   "VOWEL",
   "VOWEL_FOF",
@@ -98,9 +98,9 @@ const char* const braidsnames[] = {
   "CYMBAL",
   "SNARE",
   "WAVETABLES",
-  "WAVE_MAP",
-  "WAVE_LINE",
-  "WAVE_PARAPHONIC",
+  "Wave Map",
+  "Wave Line",
+  "Wave Paraphonic",
   "FILTERED_NOISE",
   "TWIN_PEAKS_NOISE",
   "CLOCKED_NOISE",
