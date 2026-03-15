@@ -64,7 +64,7 @@ long envTimer = 0;
 
 
 // utility
-double randomDouble(double minf, double maxf) {
+double randomDouble( double minf, double maxf) {
   return minf + random(1UL << 31) * (maxf - minf) / (1UL << 31);  // use 1ULL<<63 for max double values)
 }
 
@@ -115,12 +115,16 @@ float CV1_buffer[32];
 // button inputs
 #define SW1 34
 #define SW2 35
-#define SW3 2
+#define SW3 38
+#define SW4 2
 
 #include <Bounce2.h>
 Bounce2::Button btn_one = Bounce2::Button();
 Bounce2::Button btn_two = Bounce2::Button();
 Bounce2::Button btn_four = Bounce2::Button();
+Bounce2::Button btn_three = Bounce2::Button();
+
+int btn_three_state = 0;
 
 // Generic pin state variable
 byte pinState;
@@ -198,7 +202,6 @@ bool trigger_on = false;
 
 
 #include <STMLIB.h> // 
-
 #include <RINGS.h>
 #include "rings.h"
 
@@ -207,7 +210,6 @@ bool trigger_on = false;
 
 #include <BRAIDS.h>
 #include "braids.h"
-
 // clouds dsp not used pushes ram
 //#include <CLOUDS.h>
 //#include "clouds.h"
@@ -217,6 +219,7 @@ bool trigger_on = false;
 #include "midi.h"
 
 #include "names.h"
+
 int device_initialized = 0 ; // used to identify if the eeprom has been written.
 #include "eeprom.h"
 
@@ -229,6 +232,7 @@ const int encoderSW_pin = 28;
 
 
 // ugly, but using both ranges does not work
+// this depends on poetasters version of the arduino library
 #include "pio_encoder.h"
 PioEncoder enc1(39, PIO pio1);
 PioEncoder enc2(32, PIO pio1);
@@ -238,7 +242,7 @@ PioEncoder enc3(36, PIO pio1);
 // sadly we need a second approach.
 
 #include <RotaryEncoder.h>
-// Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
+// Setup a RotaryEncoder without pio/ the meta:
 RotaryEncoder enc4( 6,  7,  RotaryEncoder::LatchMode::FOUR3);
 
 int enc1_pos_last = 0;
@@ -363,7 +367,7 @@ void setup() {
 
   // buttons
 
-  btn_four.attach( SW3 , INPUT_PULLUP);
+  btn_four.attach( SW4 , INPUT_PULLUP);
   btn_four.interval(5);
   btn_four.setPressedState(LOW);
 
@@ -375,6 +379,10 @@ void setup() {
   btn_two.interval(5);
   btn_two.setPressedState(LOW);
 
+
+  btn_three.attach( SW3 , INPUT_PULLUP);
+  btn_three.interval(5);
+  btn_three.setPressedState(LOW);
 
   // initialize envelope settings
   envAttack = 0.05f;
@@ -404,11 +412,6 @@ void setup() {
   // Initialize wave switch states
   update_timer = millis();
   button_timer = millis();
-
-
-  btn_one.update();
-  btn_two.update();
-  btn_four.update();
 
   // used to indicated we can fetch saved settings
   just_booting = true;
@@ -538,6 +541,7 @@ void loop1() {
     // we need these on boot so the second loop can catch the startup button.
     btn_one.update();
     btn_two.update();
+    btn_three.update();
     btn_four.update();
 
     unsigned long now = millis();
@@ -582,8 +586,13 @@ void read_buttons() {
   bool longPress = false;
   int oneState = btn_one.read();
   int twoState = btn_two.read();
+
   int fourState = btn_four.read();
 
+  // we toggle button three for either position or timber encoder action
+  if ( btn_three.pressed() ) {
+      btn_three_state = !btn_three_state;
+  }
 
   // if button one was held for more than 300 millis and we're in rings toggle easteregg
   if ( btn_one.rose() ) {
@@ -598,13 +607,15 @@ void read_buttons() {
         freeze_in = !freeze_in;
         longPress = true;
       }
-    } else {
+    }
+
+    /*else {
       engineCount ++;
       if (engineCount > max_engines) {
         engineCount = 0;
       }
       engine_in = engineCount;
-    }
+    }*/
 
   }
 
@@ -829,19 +840,26 @@ void read_encoders() {
   if ( enc1_pos != enc1_pos_last ) {
     enc1_delta = (enc1_pos - enc1_pos_last) ;
   }
-
+  // encoder 3 does double duty
+  // on timbre and position
   if ( enc1_delta) {
-    float turn = ( enc1_delta * 0.005f ) + timbre_in;
-    CONSTRAIN(turn, 0.f, 1.0f)
-    if (debug) Serial.println(turn);
-    timbre_in = turn;
+    if (btn_three_state == 0 ) {
+      float turn = ( enc1_delta * 0.005f ) + timbre_in;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      timbre_in = turn;
+    } else {
+      float turn = ( enc1_delta * 0.005f ) + position_in;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      position_in = turn;
+    }
   }
+
   /// only set new pos last after buttons have had a chance to use the delta
   enc1_delta = 0;
   enc1_pos_last = enc1_pos;
 
 
-  // second encoder
+  // second encoderSame for the 
   int enc2_pos = enc2.getCount() / 4;
   if ( enc2_pos != enc2_pos_last ) {
     enc2_delta = (enc2_pos - enc2_pos_last) ;
@@ -850,7 +868,6 @@ void read_encoders() {
   if (enc2_delta) {
     float turn = ( enc2_delta * 0.005f ) + morph_in;
     CONSTRAIN(turn, 0.f, 1.0f)
-    if (debug) Serial.println(turn);
     morph_in = turn;
 
   }
@@ -863,11 +880,11 @@ void read_encoders() {
     enc3_delta = (enc3_pos - enc3_pos_last);
 
   }
+  // if encoder turned with btn down position, else harm
   if (enc3_delta) {
-    float turn = ( enc3_delta * 0.005f ) + harm_in;
-    CONSTRAIN(turn, 0.f, 1.0f)
-    if (debug) Serial.println(turn);
-    harm_in = turn;
+      float turn = ( enc3_delta * 0.005f ) + harm_in;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      harm_in = turn;
   }
   enc3_pos_last = enc3_pos;
   enc3_delta = 0;
