@@ -538,6 +538,7 @@ void setup1() {
 
 // second core deals with ui / control rate updates
 void loop1() {
+
   if (! writing) { // don't do shit when eeprom is being written1.00
     // we need these on boot so the second loop can catch the startup button.
     btn_one.update();

@@ -71,7 +71,7 @@ void displayADSR() {
   display.setFont(&Org_01);
   // // name
   display.setCursor(line_1_1.x, line_1_1.y);
-  display.print(oscnames[engine_in]);
+  display.print("ADSR");
 
   // attack
   display.setCursor(line_2_1.x, line_2_1.y);
