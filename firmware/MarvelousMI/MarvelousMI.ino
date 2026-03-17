@@ -125,6 +125,7 @@ Bounce2::Button btn_four = Bounce2::Button();
 Bounce2::Button btn_three = Bounce2::Button();
 
 int btn_three_state = 0;
+int btn_two_state = 0;
 
 // Generic pin state variable
 byte pinState;
@@ -564,15 +565,20 @@ void loop1() {
     if ( now - update_timer > 5 ) {
       read_cv();
       read_buttons();
+
       // display updates
-      if (voice_number == 0) {
-        displayPlaits();
-      } else if (voice_number == 1) {
-        displayRings();
-      } else if (voice_number == 2) {
-        displayBraids();
+      if (btn_two_state == 1) {
+        displayADSR();
       } else {
-        displayUpdate();
+        if (voice_number == 0) {
+          displayPlaits();
+        } else if (voice_number == 1) {
+          displayRings();
+        } else if (voice_number == 2) {
+          displayBraids();
+        } else {
+          displayUpdate();
+        }
       }
 
       update_timer = now;
@@ -592,6 +598,10 @@ void read_buttons() {
   // we toggle button three for either position or timber encoder action
   if ( btn_three.pressed() ) {
       btn_three_state = !btn_three_state;
+  }
+  // we toggle button two state for either  adsr or normal parameters
+  if ( btn_two.pressed() ) {
+      btn_two_state = !btn_two_state;
   }
 
   // if button one was held for more than 300 millis and we're in rings toggle easteregg
@@ -655,12 +665,6 @@ void read_buttons() {
     // Save to eeprom
     saveToEEPROM(0);
     setVoiceParameters();
-  }
-
-  if (btn_one.pressed() && btn_two.pressed()) {
-    // rings easter egg mode/ fm engine.
-    easterEgg = !easterEgg;
-    doublePressMode = true;
   }
 
   if (!doublePressMode && !longPress) {
@@ -834,71 +838,90 @@ void read_encoders() {
   // enc4 meta is an exceptoin
   enc4.tick();
 
-  // first encoder
+  // first encoder actually, third
   int enc1_pos = enc1.getCount() / 4;
-
   if ( enc1_pos != enc1_pos_last ) {
     enc1_delta = (enc1_pos - enc1_pos_last) ;
   }
   // encoder 3 does double duty
   // on timbre and position
   if ( enc1_delta) {
-    if (btn_three_state == 0 ) {
+    if (btn_three_state == 0 && btn_two_state == 0) {
       float turn = ( enc1_delta * 0.005f ) + timbre_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       timbre_in = turn;
-    } else {
+    } else if (btn_three_state == 1 && btn_two_state == 0) {
       float turn = ( enc1_delta * 0.005f ) + position_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       position_in = turn;
+    } else if ( btn_two_state == 1) {
+      float turn =  enc1_delta  + envRelease;
+      CONSTRAIN(turn, 1, 10)
+      envRelease = turn;
+      env->setReleaseRate(envRelease * SAMPLERATE);
     }
   }
-
-  /// only set new pos last after buttons have had a chance to use the delta
   enc1_delta = 0;
   enc1_pos_last = enc1_pos;
 
-
-  // second encoderSame for the 
+  // second encoder actually first
   int enc2_pos = enc2.getCount() / 4;
   if ( enc2_pos != enc2_pos_last ) {
     enc2_delta = (enc2_pos - enc2_pos_last) ;
   }
-
   if (enc2_delta) {
-    float turn = ( enc2_delta * 0.005f ) + morph_in;
-    CONSTRAIN(turn, 0.f, 1.0f)
-    morph_in = turn;
-
+    if (btn_two_state == 0) {
+      float turn = ( enc2_delta * 0.005f ) + morph_in;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      morph_in = turn;
+    } else {
+      float turn = ( enc2_delta * 0.005f ) + envDecay;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      envDecay = turn;
+      env->setDecayRate(envDecay * SAMPLERATE);  // .01 second
+    }
   }
   enc2_pos_last = enc2_pos;
   enc2_delta = 0;
 
-  // third encoder
+  // third encoder, actually second
   int enc3_pos = enc3.getCount() / 4;
   if ( enc3_pos != enc3_pos_last ) {
     enc3_delta = (enc3_pos - enc3_pos_last);
-
   }
-  // if encoder turned with btn down position, else harm
   if (enc3_delta) {
+    if (btn_two_state == 0) {
       float turn = ( enc3_delta * 0.005f ) + harm_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       harm_in = turn;
+    } else {
+      float turn = ( enc3_delta * 0.005f ) + envSustain;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      envSustain = turn;
+      env->setSustainLevel(envSustain);
+    }
   }
   enc3_pos_last = enc3_pos;
   enc3_delta = 0;
 
+
   // meta encoder turned to cycle through voice engines
   int enc4_pos = enc4.getPosition();
   if ( enc4_pos != enc4_pos_last ) {
-    engineCount =  (int) enc4.getDirection()  + engineCount ;
-    if (engineCount < 0) {
-      engineCount = max_engines;
-    } else if (engineCount > max_engines) {
-      engineCount = 0;
+    if (btn_two_state == 0) {
+      engineCount =  (int) enc4.getDirection()  + engineCount ;
+      if (engineCount < 0) {
+        engineCount = max_engines;
+      } else if (engineCount > max_engines) {
+        engineCount = 0;
+      }
+      engine_in = engineCount;
+    } else {
+      float turn = ( (int) enc4.getDirection() * 0.005f ) + envAttack;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      envAttack = turn;
+      env->setAttackRate(envAttack * SAMPLERATE);  // .01 second
     }
-    engine_in = engineCount;
   }
   enc4_pos_last = enc4_pos;
 

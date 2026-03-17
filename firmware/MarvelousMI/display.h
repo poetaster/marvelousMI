@@ -66,6 +66,36 @@ void updateGauges() {
   drawCircle( timbre_in * 100, line_2_3.x + 16, line_2_3.y );
 }
 
+void displayADSR() {
+  display.clearDisplay();
+  display.setFont(&Org_01);
+  // // name
+  display.setCursor(line_1_1.x, line_1_1.y);
+  display.print(oscnames[engine_in]);
+
+  // attack
+  display.setCursor(line_2_1.x, line_2_1.y);
+  display.print("A");
+  display.print(envAttack);
+
+
+  // decay
+  display.setCursor(line_2_2.x, line_2_2.y);
+  display.print("D");
+  display.print(envDecay);  // user sees 1-8
+
+  // sustain
+  display.setCursor(line_2_3.x, line_2_3.y);
+  display.print("S");
+  display.print(envSustain);
+  // release
+  display.setCursor(line_3_3.x, line_3_3.y);
+  display.print("R");
+  display.print(envRelease);
+
+  display.display();
+}
+
 void displayPlaits() {
   display.clearDisplay();
   display.setFont(&Org_01);
@@ -111,24 +141,17 @@ void displayRings() {
     display.print(modelnames[engine_in]);
   }
 
-  //display.setCursor(line_1_3.x, line_1_3.y);
-  //display.print("P");
-  //display.print(position_in);
-
-  //display.setCursor(line_1_2.x, line_1_2.y);
-  //display.print(oscnames[engine_in]);
-  //
-  // morph
+  // Damp
   display.setCursor(line_2_1.x, line_2_1.y);
-  display.print("M");
+  display.print("D");
 
   // harmonics
   display.setCursor(line_2_2.x, line_2_2.y);
-  display.print("H");
+  display.print("S");
 
   // timber
   display.setCursor(line_2_3.x, line_2_3.y);
-  display.print("T");
+  display.print("B");
   //display.print(timbre_in,4);
 
   //display.setCursor(line_1_2.x, line_2_1.y);
