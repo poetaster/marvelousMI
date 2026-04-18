@@ -276,7 +276,6 @@ void saveToEEPROM(int slot) {
     if (debug) Serial.println("EEPROM successfully committed");
     printConfigSlot(currentConfig);
     saveCurrentPreset(slot);  // update the currently set preset
-
   } else {
     eeprom_error = 1.3;
     if (debug) Serial.println("ERROR! EEPROM commit failed");

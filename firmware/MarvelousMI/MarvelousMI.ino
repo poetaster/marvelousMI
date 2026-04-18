@@ -2,9 +2,8 @@
   (c) 2024 blueprint@poetaster.de
   GPLv3
 
-      Some sources, including the stmlib and plaits lib are
-      MIT License
-      Copyright (c)  2020 (emilie.o.gillet@gmail.com)
+      Some sources, including the stmlib, rings, braids and plaits libs are
+      MIT License Copyright (c)  2020 (emilie.o.gillet@gmail.com)
 */
 
 bool debug = false;
@@ -243,7 +242,7 @@ PioEncoder enc3(36, PIO pio1);
 // sadly we need a second approach.
 
 #include <RotaryEncoder.h>
-// Setup a RotaryEncoder without pio/ the meta:
+// Setup a RotaryEncoder without pio/ the meta: 6, 7 usually
 RotaryEncoder enc4( 6,  7,  RotaryEncoder::LatchMode::FOUR3);
 
 int enc1_pos_last = 0;
@@ -315,8 +314,11 @@ void setup() {
   //pio_set_gpio_base(PIO pio0, 0);
 
   enc1.begin();
+  //enc1.flip(); // only on the green blue encoders
   enc2.begin();
+  //enc2.flip(); // only on the green blue encoders
   enc3.begin();
+  //enc3.flip(); // only on the green blue encoders
 
   delay(100);
 
@@ -337,9 +339,9 @@ void setup() {
   pinMode(23, OUTPUT);
   digitalWrite(23, HIGH);
 
-  // mute
+  // mute mute is LOW
   pinMode(11, OUTPUT);
-  digitalWrite(11, LOW);
+  digitalWrite(11, HIGH);
 
   pinMode(LED_BUILTIN, OUTPUT);
 
@@ -471,6 +473,7 @@ void loop() {
 
   if ( DAC.availableForWrite()) {
 
+  if ( ! writing) {
     if (voice_number == 0) {
 
       updatePlaitsAudio();
@@ -500,34 +503,25 @@ void loop() {
         DAC.write( sample );
       }
     }
-
-
-
   }
+ }
 
-  /*
-     disabled clouds
+  /* disabled clouds
      else if (voice_number == 3) {
-
     // clouds, samplebuffer at same time
     // or braids into buffer directly.
     updateBraidsAudio();
-
     // copy the braids audio to the clouds input buffer
     clouds::FloatFrame  *input = cloud[0].input;
-
     for (int i = 0; i < 32; i++) {
-
     float sample = (float) ( inst[0].pd.buffer[i] / 32768.0f ) * 0.5f;
     //float sample = (float) ( analogRead(CV7) / 4095.0f ) * 0.9f;
     input[i].l = sample;
     input[i].r = sample;  // Mono input
-
     }
-    //for (size_t i = 0; i < 32; ++i) {
-    //  sample_buffer[i] = (float) ( analogRead(CV7) ); // arbitrary +1 gain
-    //}
-
+    for (size_t i = 0; i < 32; ++i) {
+      sample_buffer[i] = (float) ( analogRead(CV7) ); // arbitrary +1 gain
+    }
     updateCloudsAudio();
     }*/
 }
@@ -581,7 +575,6 @@ void loop1() {
           displayUpdate();
         }
       }
-
       update_timer = now;
     }
   }
@@ -663,9 +656,30 @@ void read_buttons() {
 
     voice_number++;
     if (voice_number > 2) voice_number = 0;
+
     // Save to eeprom
+    // set mute then save
+    // send null data for (21ms @ 48kHz)
+
+    writing = true;
+    digitalWrite(11, HIGH);
+    digitalWrite(11, LOW);
+    int16_t sampleL = 0;
+    unsigned long now = millis();
+
+    while ( millis() - now < 35) {
+        DAC.write(sampleL);
+        DAC.write(sampleL);
+    }
+    delay(21);
+
     saveToEEPROM(0);
     setVoiceParameters();
+
+    delay(1);
+    digitalWrite(11, LOW);
+    digitalWrite(11, HIGH);
+    writing = false;
   }
 
   if (!doublePressMode && !longPress) {
