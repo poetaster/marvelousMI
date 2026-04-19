@@ -1,7 +1,5 @@
 /* EEPROM  mostly from modulove A-RYTH-MATIK
-  { fills } { offsets } volumes, pitch selected sample, bpm, ExtClock
 */
-// we save preset & slot before this
 #define EEPROM_START_ADDRESS 50
 #define NUM_PRESETS 1
 #define CONFIG_SIZE (sizeof(ConfigSlot))

@@ -140,7 +140,6 @@ void displayRings() {
   } else {
     display.print(modelnames[engine_in]);
   }
-
   // Damp
   display.setCursor(line_2_1.x, line_2_1.y);
   display.print("D");
@@ -152,6 +151,37 @@ void displayRings() {
   // timber
   display.setCursor(line_2_3.x, line_2_3.y);
   display.print("B");
+  //display.print(timbre_in,4);
+
+  //display.setCursor(line_1_2.x, line_2_1.y);
+  //display.print("P:");
+  //display.print(voices[0].patch.note);
+
+  // position
+  display.setCursor(line_3_3.x, line_3_3.y);
+  display.print("P");
+
+  updateGauges();
+  display.display();
+}
+
+void displayClouds() {
+  display.clearDisplay();
+  display.setFont(&Org_01);
+  // // name
+  display.setCursor(line_1_1.x, line_1_1.y);
+  display.print(cloudnames[engine_in]);
+  // Damp
+  display.setCursor(line_2_1.x, line_2_1.y);
+  display.print("D");
+
+  // harmonics
+  display.setCursor(line_2_2.x, line_2_2.y);
+  display.print("S");
+
+  // timber
+  display.setCursor(line_2_3.x, line_2_3.y);
+  display.print("T");
   //display.print(timbre_in,4);
 
   //display.setCursor(line_1_2.x, line_2_1.y);

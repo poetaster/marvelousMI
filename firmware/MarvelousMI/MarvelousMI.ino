@@ -193,7 +193,6 @@ float clouds_dw_in = 1.0f;
 float clouds_pos_in = 0.0f;
 int   clouds_engine = 0;
 float clouds_level = 1.0f;
-
 bool  freeze_in = false;
 int   voice_in = 4;
 
@@ -210,9 +209,10 @@ bool trigger_on = false;
 
 #include <BRAIDS.h>
 #include "braids.h"
+
 // clouds dsp not used pushes ram
-//#include <CLOUDS.h>
-//#include "clouds.h"
+#include <CLOUDS.h>
+#include "clouds.h"
 
 #include "Midier.h"
 // midi related functions
@@ -409,8 +409,8 @@ void setup() {
   initRings();
   delay(50);
   initBraids();
-  //delay(100); not for now
-  // initClouds();
+  delay(100);
+  initClouds();
 
   // Initialize wave switch states
   update_timer = millis();
@@ -472,58 +472,66 @@ void setup() {
 void loop() {
 
   if ( DAC.availableForWrite()) {
+    if ( ! writing) {
+      if (voice_number == 0) {
 
-  if ( ! writing) {
-    if (voice_number == 0) {
+        updatePlaitsAudio();
+        // now apply the envelope
+        for (size_t i = 0; i < plaits::kBlockSize; ++i) {
+          int16_t sampleL = (int16_t) ( (float) outputPlaits[i].out * env->process() ) ;
+          int16_t sampleR = (int16_t) ( (float) outputPlaits[i].aux * env->process() ) ;
+          //out_bufferL[i] = sample;
+          DAC.write( sampleL );
+          DAC.write( sampleR );
+        }
 
-      updatePlaitsAudio();
-      // now apply the envelope
-      for (size_t i = 0; i < plaits::kBlockSize; ++i) {
-        int16_t sampleL = (int16_t) ( (float) outputPlaits[i].out * env->process() ) ;
-        int16_t sampleR = (int16_t) ( (float) outputPlaits[i].aux * env->process() ) ;
-        //out_bufferL[i] = sample;
-        DAC.write( sampleL );
-        DAC.write( sampleR );
+      } else if (voice_number == 1) {
+        // we're not doing stereo because we get neat poly output with note ins like this
+        updateRingsAudio();
+        for (size_t i = 0; i < 32; i++) {
+          DAC.write( out_bufferL[i] );
+          DAC.write( out_bufferL[i] );
+        }
+
+      } else if (voice_number == 2) {
+        // just mono for now
+        updateBraidsAudio();
+        for (size_t i = 0; i < 32; i++) {
+          int16_t sample =   (int16_t) ( (float) inst[0].pd.buffer[i] * env->process() ) ;
+          DAC.write( sample );
+          DAC.write( sample );
+        }
+      } else if (voice_number == 3) {
+        // clouds samplebuffer filled at same time
+        // or braids into buffer directly.
+
+        // instance of clouds input
+        clouds::FloatFrame  *input = cloud[0].input;
+
+        // arbitrary check on input
+        if ( analogRead(CV6) > 20 ) {
+          // copy the input audio to the clouds input buffer
+          for (size_t i = 0; i < 32; ++i) {
+            sample_buffer[i] = (float) ( analogRead(CV6) ); // arbitrary +1 gain
+            input[i].l = (float) sample_buffer[i] /4095.0f;
+            input[i].r = (float) sample_buffer[i] /4095.0f;
+          }
+        } else {
+          // copy the braids audio to the clouds input buffer
+          updateBraidsAudio();
+          for (int i = 0; i < 32; i++) {
+            float sample = (float) ( inst[0].pd.buffer[i] / 32768.0f ) * 0.5f;
+            input[i].l = sample;
+            input[i].r = sample;  // Mono input
+          }
+        }
+        // now run update on clouds
+        updateCloudsAudio();
       }
 
-    } else if (voice_number == 1) {
-      // we're not doing stereo because we get neat poly output with note ins like this
-      updateRingsAudio();
-      for (size_t i = 0; i < 32; i++) {
-        DAC.write( out_bufferL[i] );
-        DAC.write( out_bufferL[i] );
-      }
+    } // end writing
+ } // end available for write
 
-    } else if (voice_number == 2) {
-      // just mono for now
-      updateBraidsAudio();
-      for (size_t i = 0; i < 32; i++) {
-        int16_t sample =   (int16_t) ( (float) inst[0].pd.buffer[i] * env->process() ) ;
-        DAC.write( sample );
-        DAC.write( sample );
-      }
-    }
-  }
- }
-
-  /* disabled clouds
-     else if (voice_number == 3) {
-    // clouds, samplebuffer at same time
-    // or braids into buffer directly.
-    updateBraidsAudio();
-    // copy the braids audio to the clouds input buffer
-    clouds::FloatFrame  *input = cloud[0].input;
-    for (int i = 0; i < 32; i++) {
-    float sample = (float) ( inst[0].pd.buffer[i] / 32768.0f ) * 0.5f;
-    //float sample = (float) ( analogRead(CV7) / 4095.0f ) * 0.9f;
-    input[i].l = sample;
-    input[i].r = sample;  // Mono input
-    }
-    for (size_t i = 0; i < 32; ++i) {
-      sample_buffer[i] = (float) ( analogRead(CV7) ); // arbitrary +1 gain
-    }
-    updateCloudsAudio();
-    }*/
 }
 
 void setup1() {
@@ -572,7 +580,7 @@ void loop1() {
         } else if (voice_number == 2) {
           displayBraids();
         } else {
-          displayUpdate();
+          displayClouds();
         }
       }
       update_timer = now;
@@ -612,15 +620,6 @@ void read_buttons() {
         longPress = true;
       }
     }
-
-    /*else {
-      engineCount ++;
-      if (engineCount > max_engines) {
-        engineCount = 0;
-      }
-      engine_in = engineCount;
-    }*/
-
   }
 
   // meta button pressed to cycle through voices
@@ -655,7 +654,7 @@ void read_buttons() {
     }
 
     voice_number++;
-    if (voice_number > 2) voice_number = 0;
+    if (voice_number > 3) voice_number = 0;
 
     // Save to eeprom
     // set mute then save
@@ -695,14 +694,14 @@ void read_buttons() {
 void setVoiceParameters(){
   if (voice_number == 0) {
       engine_in = plaits_engine; // engine_in % 17;
-      max_engines = 21; 
+      max_engines = 21;
       morph_in = plaits_morph;
       timbre_in = plaits_timbre;
       harm_in = plaits_harm;
       position_in = plaits_position;
 
     } else if (voice_number == 1) {
-      engine_in = rings_engine; 
+      engine_in = rings_engine;
       max_engines = 5;
       morph_in = rings_morph;
       harm_in = rings_harm;
@@ -710,13 +709,13 @@ void setVoiceParameters(){
       position_in = rings_position;
 
     } else if (voice_number == 2 ) {
-      engine_in = braids_engine; 
+      engine_in = braids_engine;
       max_engines = 45;
       morph_in = braids_morph;
       timbre_in = braids_timbre;
 
-    } else if (voice_number == 3 ) { // not used
-      engine_in = clouds_engine; 
+    } else if (voice_number == 3 ) {
+      engine_in = clouds_engine;
       max_engines = 3;
       morph_in = clouds_morph;
       timbre_in = clouds_timbre;
