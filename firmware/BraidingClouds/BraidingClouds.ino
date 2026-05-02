@@ -195,6 +195,7 @@ bool  freeze_in = false;
 int   voice_in = 4;
 
 bool trigger_on = false;
+bool easterEgg = false;
 
 
 
@@ -508,11 +509,13 @@ void loop() {
         clouds::FloatFrame  *input = cloud[0].input;
         for (int i = 0; i < 32; i++) {
           float sample;
-          sample = (float) ( analogRead(CV6) ) ;
-          if (sample < 150.0f) {
-            sample = (float) ( inst[0].pd.buffer[i] / 32768.0f  ) ;
+          sample = (float) ( analogRead(CV6) )/4095.0f ;
+          //if (sample == 0.51f) {
+          if (easterEgg) {
+            sample = (float) ( inst[0].pd.buffer[i] / 32768.0f   * 0.5f ) ;
+          } else {
+            sample = sample  * 0.5f;
           }
-          sample = (float) ( inst[0].pd.buffer[i] / 32768.0f  ) * 0.5f ;
           input[i].l = sample;
           input[i].r = sample;  // Mono input
         }
@@ -592,6 +595,8 @@ void read_buttons() {
   int twoState = btn_two.read();
 
   int fourState = btn_four.read();
+  btnOneLastTime = btn_one.previousDuration();
+  btnTwoLastTime = btn_two.previousDuration();
 
   // we toggle button three for either position or timber encoder action
   if ( btn_three.pressed() ) {
@@ -599,17 +604,27 @@ void read_buttons() {
   }
   // we toggle button two state for either  adsr or normal parameters
   if ( btn_two.pressed() ) {
+      //btn_two_state = !btn_two_state;
+  }
+
+  if ( btn_two.rose() ) {
+    if ( btnTwoLastTime > 350 ) {
+      if ( voice_number == 3 ) {
+        easterEgg = !easterEgg;
+        longPress = true;
+      }
+    } else if (btnTwoLastTime < 350) {
       btn_two_state = !btn_two_state;
+
+    }
   }
 
   // if button one was held for more than 300 millis and we're in rings toggle easteregg
   if ( btn_one.rose() ) {
-
-    btnOneLastTime = btn_one.previousDuration();
-    if ( btnOneLastTime > 350 && ! btn_two.pressed()) {
-      if ( voice_number == 1 ) {
-        //easterEgg = !easterEgg;
-        //longPress = true;
+    if ( btnTwoLastTime > 350 ) {
+      if ( voice_number == 3 ) {
+        easterEgg = !easterEgg;
+        longPress = true;
       }
       // clouds, not used
       if ( voice_number == 3 && ! btn_two.pressed()) {
@@ -790,17 +805,17 @@ void read_cv() {
   //plaits and rings cv
   int16_t timbre = avg_cv(CV2);
   timb_mod = (float)timbre;
-  timb_mod = mapf( timb_mod, 5.0f, 4090.0f, 0.00f, 1.00f);
+  timb_mod = timbre /4095.0f * 0.5f; //mapf( timb_mod, 5.0f, 4090.0f, 0.00f, 1.00f);
   timb_mod = constrain(timb_mod, 0.00f, 1.00f);
 
   int16_t morph = avg_cv(CV3) ;
   morph_mod = (float) morph;
-  morph_mod = mapf ( (float) morph_mod, 5.0f, 4090.0f, 0.00f, 1.00f);
+  morph_mod = morph / 4095.0f * 0.5f; //mapf ( (float) morph_mod, 5.0f, 4090.0f, 0.00f, 1.00f);
   morph_mod = constrain(morph_mod, 0.00f, 1.00f);
 
   // don't remember if this was important
-  float pos = avg_cv(CV4) * 1.0f ; // f&d noise floor
-  pos_mod = mapf (  pos, 5.0f, 4090.0f, 0.00f, 1.00f);
+  float pos = avg_cv(CV4) ; // f&d noise floor
+  pos_mod = pos/4095.0f * 0.5f;//mapf (  pos, 5.0f, 4090.0f, 0.00f, 1.00f);
   pos_mod = constrain(pos, 0.00f, 1.00f);
 
   // plaits
