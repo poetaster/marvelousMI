@@ -95,6 +95,35 @@ void displayADSR() {
 
   display.display();
 }
+void displayReverb() {
+  display.clearDisplay();
+  display.setFont(&Org_01);
+  // // name
+  display.setCursor(line_1_1.x, line_1_1.y);
+  display.print("Cloudverb");
+
+  // attack
+  display.setCursor(line_2_1.x, line_2_1.y);
+  display.print("R");
+  display.print(clouds_reverb);
+
+
+  // decay
+  display.setCursor(line_2_2.x, line_2_2.y);
+  display.print("F");
+  display.print(clouds_fb);  // user sees 1-8
+
+  // sustain
+  display.setCursor(line_2_3.x, line_2_3.y);
+  display.print("D");
+  display.print(clouds_dw_in);
+  // release
+  display.setCursor(line_3_3.x, line_3_3.y);
+  display.print("S");
+  display.print(clouds_spread);
+
+  display.display();
+}
 
 
 

@@ -188,6 +188,9 @@ float clouds_harm = harm_in;
 float clouds_position = position_in;
 float clouds_mode = engine_in;
 float clouds_dw_in = 1.0f;
+float clouds_reverb = 0.3f;
+float clouds_spread = 0.5f;
+float clouds_fb = 0.3f;
 float clouds_pos_in = 0.0f;
 int   clouds_engine = 0;
 float clouds_level = 1.0f;
@@ -514,7 +517,7 @@ void loop() {
           if (easterEgg) {
             sample = (float) ( inst[0].pd.buffer[i] / 32768.0f   * 0.5f ) ;
           } else {
-            sample = sample  * 0.5f;
+            sample = sample;// * 1.5f;
           }
           input[i].l = sample;
           input[i].r = sample;  // Mono input
@@ -570,7 +573,12 @@ void loop1() {
 
       // display updates
       if (btn_two_state == 1) {
-        displayADSR();
+        if (voice_number == 2) {
+          displayADSR();
+        } else {
+          // secondary clouds 
+          displayReverb();
+        }
       } else {
         if (voice_number == 0) {
           //displayPlaits();
@@ -622,11 +630,6 @@ void read_buttons() {
   // if button one was held for more than 300 millis and we're in rings toggle easteregg
   if ( btn_one.rose() ) {
     if ( btnTwoLastTime > 350 ) {
-      if ( voice_number == 3 ) {
-        easterEgg = !easterEgg;
-        longPress = true;
-      }
-      // clouds, not used
       if ( voice_number == 3 && ! btn_two.pressed()) {
         freeze_in = !freeze_in;
         longPress = true;
@@ -880,11 +883,15 @@ void read_encoders() {
       float turn = ( enc1_delta * 0.005f ) + position_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       position_in = turn;
-    } else if ( btn_two_state == 1) {
+    } else if ( btn_two_state == 1 && voice_number == 2) {
       float turn =  enc1_delta  + envRelease;
       CONSTRAIN(turn, 1, 10)
       envRelease = turn;
       env->setReleaseRate(envRelease * SAMPLERATE);
+    } else if (btn_two_state == 1 && voice_number == 3) {
+      float turn = ( enc1_delta * 0.005f ) + clouds_dw_in;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      clouds_dw_in = turn;
     }
   }
   enc1_delta = 0;
@@ -900,11 +907,15 @@ void read_encoders() {
       float turn = ( enc2_delta * 0.005f ) + morph_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       morph_in = turn;
-    } else {
+    } else if (btn_two_state == 1 && voice_number ==2) {
       float turn = ( enc2_delta * 0.005f ) + envDecay;
       CONSTRAIN(turn, 0.f, 1.0f)
       envDecay = turn;
       env->setDecayRate(envDecay * SAMPLERATE);  // .01 second
+    } else if (btn_two_state == 1 && voice_number ==3) {
+      float turn = ( enc2_delta * 0.005f ) + clouds_reverb;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      clouds_reverb = turn;
     }
   }
   enc2_pos_last = enc2_pos;
@@ -920,11 +931,15 @@ void read_encoders() {
       float turn = ( enc3_delta * 0.005f ) + harm_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       harm_in = turn;
-    } else {
+    } else if (btn_two_state == 1 && voice_number ==2) {
       float turn = ( enc3_delta * 0.005f ) + envSustain;
       CONSTRAIN(turn, 0.f, 1.0f)
       envSustain = turn;
       env->setSustainLevel(envSustain);
+    } else if (btn_two_state == 1 && voice_number ==3) {
+      float turn = ( enc3_delta * 0.005f ) + clouds_fb;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      clouds_fb = turn;
     }
   }
   enc3_pos_last = enc3_pos;
@@ -942,11 +957,16 @@ void read_encoders() {
         engineCount = 0;
       }
       engine_in = engineCount;
-    } else {
+    } else if (btn_two_state == 1 && voice_number ==2) {
       float turn = ( (int) enc4.getDirection() * 0.005f ) + envAttack;
       CONSTRAIN(turn, 0.f, 1.0f)
       envAttack = turn;
       env->setAttackRate(envAttack * SAMPLERATE);  // .01 second
+    } else if (btn_two_state == 1 && voice_number ==3) {
+      float turn = ( (int) enc4.getDirection() * 0.005f ) + clouds_spread;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      clouds_spread = turn;
+
     }
   }
   enc4_pos_last = enc4_pos;
