@@ -629,7 +629,7 @@ void read_buttons() {
 
   // if button one was held for more than 300 millis and we're in rings toggle easteregg
   if ( btn_one.rose() ) {
-    if ( btnTwoLastTime > 350 ) {
+    if ( btnOneLastTime > 350 ) {
       if ( voice_number == 3 && ! btn_two.pressed()) {
         freeze_in = !freeze_in;
         longPress = true;
