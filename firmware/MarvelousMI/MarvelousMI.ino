@@ -21,8 +21,6 @@ bool debug = false;
 #include <vector>
 #include <algorithm>
 
-//#include <Wire.h>
-
 #include <SoftwareSerial.h>
 
 #include <MIDI.h>
@@ -211,8 +209,8 @@ bool trigger_on = false;
 #include "braids.h"
 
 // clouds dsp not used pushes ram
-#include <CLOUDS.h>
-#include "clouds.h"
+//#include <CLOUDS.h>
+//#include "clouds.h"
 
 #include "Midier.h"
 // midi related functions
@@ -409,8 +407,8 @@ void setup() {
   initRings();
   delay(50);
   initBraids();
-  delay(100);
-  initClouds();
+  // delay(100);
+  //initClouds();
 
   // Initialize wave switch states
   update_timer = millis();
@@ -474,7 +472,6 @@ void loop() {
   if ( DAC.availableForWrite()) {
     if ( ! writing) {
       if (voice_number == 0) {
-
         updatePlaitsAudio();
         // now apply the envelope
         for (size_t i = 0; i < plaits::kBlockSize; ++i) {
@@ -501,36 +498,37 @@ void loop() {
           DAC.write( sample );
           DAC.write( sample );
         }
-      } else if (voice_number == 3) {
-        // clouds samplebuffer filled at same time
+      } 
+
+     /*  does not run on the olimex
+      else if (voice_number == 3) {
+        // clouds, samplebuffer at same time
         // or braids into buffer directly.
-
-        // instance of clouds input
+        DAC.setFrequency(32000);
+        updateBraidsAudio();
+        // copy the braids audio to the clouds input buffer
         clouds::FloatFrame  *input = cloud[0].input;
-
-        // arbitrary check on input
-        if ( analogRead(CV6) > 20 ) {
-          // copy the input audio to the clouds input buffer
-          for (size_t i = 0; i < 32; ++i) {
-            sample_buffer[i] = (float) ( analogRead(CV6) ); // arbitrary +1 gain
-            input[i].l = (float) sample_buffer[i] /4095.0f;
-            input[i].r = (float) sample_buffer[i] /4095.0f;
+        for (int i = 0; i < 32; i++) {
+          float sample;
+          sample = (float) ( analogRead(CV6) ) ;
+          if (sample < 150.0f) {
+            sample = (float) ( inst[0].pd.buffer[i] / 32768.0f  ) ;
           }
-        } else {
-          // copy the braids audio to the clouds input buffer
-          updateBraidsAudio();
-          for (int i = 0; i < 32; i++) {
-            float sample = (float) ( inst[0].pd.buffer[i] / 32768.0f ) * 0.5f;
-            input[i].l = sample;
-            input[i].r = sample;  // Mono input
-          }
+          input[i].l = sample;
+          input[i].r = sample;  // Mono input
         }
-        // now run update on clouds
         updateCloudsAudio();
+        clouds::FloatFrame  *output = cloud[0].output;
+        for (int i = 0; i < 32; i++) {
+          int16_t sampleL =  stmlib::Clip16( static_cast<int32_t>(  (  output[i].l )  * 32768.0f  ) * 1.5f ) ;
+          int16_t sampleR =  stmlib::Clip16( static_cast<int32_t>(  (  output[i].r )  * 32768.0f  ) * 1.5f ) ;
+          DAC.write( sampleL );
+          DAC.write( sampleR );
+        }
       }
-
-    } // end writing
- } // end available for write
+      */
+      } // end writing
+   } // end available for write
 
 }
 
@@ -615,6 +613,7 @@ void read_buttons() {
         easterEgg = !easterEgg;
         longPress = true;
       }
+      // clouds, not used
       if ( voice_number == 3 && ! btn_two.pressed()) {
         freeze_in = !freeze_in;
         longPress = true;
@@ -654,7 +653,7 @@ void read_buttons() {
     }
 
     voice_number++;
-    if (voice_number > 3) voice_number = 0;
+    if (voice_number > 2) voice_number = 0;
 
     // Save to eeprom
     // set mute then save
