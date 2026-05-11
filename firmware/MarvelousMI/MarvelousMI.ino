@@ -123,6 +123,7 @@ Bounce2::Button btn_three = Bounce2::Button();
 
 int btn_three_state = 0;
 int btn_two_state = 0;
+int btn_one_state = 0;
 
 // Generic pin state variable
 byte pinState;
@@ -136,6 +137,8 @@ int16_t sample_buffer[32]; // used while we play samples for demo
 
 // voice params
 int voice_number = 0; // for switching  between modules
+
+float global_volume = 0.6;
 
 // we are reusing the plaits nomenclature for all modules
 // Plaits modulation vars
@@ -475,8 +478,8 @@ void loop() {
         updatePlaitsAudio();
         // now apply the envelope
         for (size_t i = 0; i < plaits::kBlockSize; ++i) {
-          int16_t sampleL = (int16_t) ( (float) outputPlaits[i].out * env->process() ) ;
-          int16_t sampleR = (int16_t) ( (float) outputPlaits[i].aux * env->process() ) ;
+          int16_t sampleL = (int16_t) ( (float) outputPlaits[i].out * env->process() * global_volume) ;
+          int16_t sampleR = (int16_t) ( (float) outputPlaits[i].aux * env->process() * global_volume) ;
           //out_bufferL[i] = sample;
           DAC.write( sampleL );
           DAC.write( sampleR );
@@ -484,6 +487,7 @@ void loop() {
 
       } else if (voice_number == 1) {
         // we're not doing stereo because we get neat poly output with note ins like this
+        // global volume is in the update method
         updateRingsAudio();
         for (size_t i = 0; i < 32; i++) {
           DAC.write( out_bufferL[i] );
@@ -494,7 +498,7 @@ void loop() {
         // just mono for now
         updateBraidsAudio();
         for (size_t i = 0; i < 32; i++) {
-          int16_t sample =   (int16_t) ( (float) inst[0].pd.buffer[i] * env->process() ) ;
+          int16_t sample =   (int16_t) ( (float) inst[0].pd.buffer[i] * env->process() * global_volume) ;
           DAC.write( sample );
           DAC.write( sample );
         }
@@ -618,6 +622,8 @@ void read_buttons() {
         freeze_in = !freeze_in;
         longPress = true;
       }
+    } else if (btnOneLastTime < 350 ) {
+      btn_one_state = !btn_one_state;
     }
   }
 
@@ -883,15 +889,19 @@ void read_encoders() {
     enc2_delta = (enc2_pos - enc2_pos_last) ;
   }
   if (enc2_delta) {
-    if (btn_two_state == 0) {
+    if (btn_two_state == 0 && btn_one_state == 0) {
       float turn = ( enc2_delta * 0.005f ) + morph_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       morph_in = turn;
-    } else {
+    } else if (btn_two_state == 1 && btn_one_state == 0) {
       float turn = ( enc2_delta * 0.005f ) + envDecay;
       CONSTRAIN(turn, 0.f, 1.0f)
       envDecay = turn;
       env->setDecayRate(envDecay * SAMPLERATE);  // .01 second
+    } else if (btn_one_state == 1) {
+      float turn = ( enc2_delta * 0.005f ) + global_volume;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      global_volume = turn;
     }
   }
   enc2_pos_last = enc2_pos;

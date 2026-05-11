@@ -37,7 +37,7 @@ const int step_text_pos[] = { 0, 15, 16, 15, 32, 15, 48, 15, 64, 15, 80, 15, 96,
 
 const pos_t line_1_1    = {.x = 0,  .y = 8, .str = "bpm:%3d" };
 const pos_t line_1_2  = {.x = 36, .y = 8, .str = "trs:%+2d" };
-const pos_t line_1_3  = {.x = 72, .y = 8, .str = "seq:%d" };
+const pos_t line_1_3  = {.x = 100, .y = 8, .str = "seq:%d" };
 const pos_t line_2_1    = {.x = 0,  .y = 19, .str = "" };
 const pos_t line_2_2   = {.x = 36, .y = 19, .str = "" };
 const pos_t line_2_3   = {.x = 72, .y = 19, .str = "" };
@@ -53,17 +53,13 @@ const int gate_bar_width = 14;
 const int gate_bar_height = 4;
 
 void updateGauges() {
-
-  // morph
-  drawCircle( morph_in * 100, line_2_1.x + 16, line_2_1.y );
+  drawCircle( global_volume * 100, line_1_3.x + 16, line_1_3.y ); // global volume
+  drawCircle( morph_in * 100, line_2_1.x + 16, line_2_1.y ); // morph
   if (voice_number != 2) {
-    // harm
-    drawCircle( harm_in * 100, line_2_2.x + 16, line_2_2.y );
-    // position
-    drawCircle( position_in * 100, line_3_3.x + 16, line_3_3.y );
+    drawCircle( harm_in * 100, line_2_2.x + 16, line_2_2.y ); // harm
+    drawCircle( position_in * 100, line_3_3.x + 16, line_3_3.y ); // position
   }
-  //timbre
-  drawCircle( timbre_in * 100, line_2_3.x + 16, line_2_3.y );
+  drawCircle( timbre_in * 100, line_2_3.x + 16, line_2_3.y ); //  timbre
 }
 
 void displayADSR() {
@@ -72,25 +68,28 @@ void displayADSR() {
   // // name
   display.setCursor(line_1_1.x, line_1_1.y);
   display.print("ADSR");
+  // volume
+  display.setCursor(line_1_3.x, line_1_3.y);
+  display.print("V");
+  drawCircle( global_volume * 100, line_1_3.x + 16, line_1_3.y ); // global volume
 
   // attack
   display.setCursor(line_2_1.x, line_2_1.y);
   display.print("A");
-  display.print(envAttack);
-
+  drawCircle( envAttack * 100, line_2_1.x + 16, line_2_1.y ); 
 
   // decay
   display.setCursor(line_2_2.x, line_2_2.y);
   display.print("D");
-  display.print(envDecay);  // user sees 1-8
+  drawCircle( envDecay * 100, line_2_2.x + 16, line_2_2.y ); // harm
 
   // sustain
   display.setCursor(line_2_3.x, line_2_3.y);
   display.print("S");
-  display.print(envSustain);
+  drawCircle( envSustain * 100, line_2_3.x + 16, line_2_3.y ); //  timbre
   // release
   display.setCursor(line_3_3.x, line_3_3.y);
-  display.print("R");
+  display.print("R: ");
   display.print(envRelease);
 
   display.display();
@@ -103,9 +102,9 @@ void displayPlaits() {
   display.setCursor(line_1_1.x, line_1_1.y);
   display.print(oscnames[engine_in]);
 
-  //display.setCursor(line_1_3.x, line_1_3.y);
-  //display.print("p");
-  //display.print(position_in);
+  // volume
+  display.setCursor(line_1_3.x, line_1_3.y);
+  display.print("V");
 
   // morph
   display.setCursor(line_2_1.x, line_2_1.y);
@@ -140,6 +139,10 @@ void displayRings() {
   } else {
     display.print(modelnames[engine_in]);
   }
+  // volume
+  display.setCursor(line_1_3.x, line_1_3.y);
+  display.print("V");
+
   // Damp
   display.setCursor(line_2_1.x, line_2_1.y);
   display.print("D");
@@ -171,6 +174,9 @@ void displayClouds() {
   // // name
   display.setCursor(line_1_1.x, line_1_1.y);
   display.print(cloudnames[engine_in]);
+  // volume
+  display.setCursor(line_1_3.x, line_1_3.y);
+  display.print("V");
   // Damp
   display.setCursor(line_2_1.x, line_2_1.y);
   display.print("D");
@@ -204,6 +210,10 @@ void displayBraids() {
   display.setCursor(line_1_1.x, line_1_1.y);
   display.print(braidsnames[engine_in]);
 
+  // volume
+  display.setCursor(line_1_3.x, line_1_3.y);
+  display.print("V");
+
   display.setCursor(line_2_1.x, line_2_1.y);
   display.print("C");
   //display.print(morph_in);
@@ -236,6 +246,10 @@ void displayUpdate() {
   display.setCursor(line_1_1.x, line_1_1.y);
   display.print(engine_in);
   display.print(" ");
+
+  // volume
+  display.setCursor(line_1_3.x, line_1_3.y);
+  display.print("V");
 
   if (voice_number == 0) {
     display.print(oscnames[engine_in]);

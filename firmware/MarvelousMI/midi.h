@@ -89,27 +89,31 @@ float ccTofloat(byte value) {
 }
 
 void HandleControlChange(byte channel, byte cc, byte value) {
+  float tmp;
   switch (cc) {
     case 82:
-      position_in = ccTofloat(value) ;
+      if ( abs ( ( position_in * 127) - value ) < 10 )
+        position_in = ccTofloat(value);
       break;
     case 83:
       break;
     case 85:
       break;
-    case 17:
-      break;
     case 74:
-      morph_in = ccTofloat(value) ;
+      if ( abs ( ( morph_in * 127) - value ) < 10 )
+        morph_in = ccTofloat(value);
       break;
     case 71:
-      timbre_in = ccTofloat(value) ;
+      if ( abs ( ( timbre_in * 127) - value ) < 10 )
+        timbre_in = ccTofloat(value);
       break;
     case 76:
-      harm_in = ccTofloat(value) ;
+      if ( abs ( ( harm_in * 127) - value ) < 10 )
+        harm_in = ccTofloat(value);
       break;
     case 77:
-      position_in = ccTofloat(value) ;
+      if ( abs ( ( position_in * 127) - value ) < 10 )
+        position_in = ccTofloat(value);
       break;
     case 93:
       digitalWrite(LED_BUILTIN, HIGH);
@@ -119,6 +123,10 @@ void HandleControlChange(byte channel, byte cc, byte value) {
       break;
     case 19:
       digitalWrite(LED_BUILTIN, HIGH);
+      break;
+    case 17:
+      if ( abs ( ( global_volume * 127) - value ) < 10 )
+        global_volume = ccTofloat(value);
       break;
     case 16:
       digitalWrite(LED_BUILTIN, HIGH);
