@@ -77,6 +77,24 @@ float mapf(float value, float fromLow, float fromHigh, float toLow, float toHigh
   return result;
 }
 
+int cv_avg = 7;
+int16_t avg_cv(int cv_in) {
+
+  //std::vector<int> data;
+  int16_t val = 0;
+
+  //for (int j = 0; j < cv_avg; ++j) data.push_back(analogRead(cv_in)); // val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
+  for (int j = 0; j < cv_avg; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
+  val = val / cv_avg;
+
+  //return median(data);
+
+  return val;
+}
+
+/*
+ *  set the globals to values from last saved voice parameters
+ */
 
 // volts to octave for 3.3 volts
 // based on https://little-scale.blogspot.com/2018/05/pitch-cv-to-frequency-conversion-via.html
@@ -104,7 +122,6 @@ float mapping_lower_limit = 5; //36.0f;
 #define CV6 (47u)
 
 int cv_ins[6] = {CV1, CV2, CV3, CV4, CV5, CV6};
-int cv_avg = 15;
 
 // buffer for input to rings exciter
 float CV1_buffer[32];
@@ -303,6 +320,30 @@ bool just_booting = true;
 
 //File settingsFile;
 
+// check all cv inputs and if none are changing,
+// return false 
+
+bool cv_connected(){
+
+  bool connected = false;
+  int cvs[6] = {0,0,0,0,0,0};
+
+  // seed cv collection
+  for (int j = 0; j < 6; ++j) {
+      // collect cv for each input
+      cvs[j] = analogRead(cv_ins[j]);
+  }
+
+  for (int i = 0; i < 10; i++) {
+  // take 10 samples
+    for (int j = 0; j < 6; j++) {
+      if ( cvs[j] != analogRead(cv_ins[j]) ) {
+          return true ;
+      }
+    }
+  }
+  return false;
+}
 
 void setup() {
   if (debug) {
@@ -397,7 +438,6 @@ void setup() {
   env->setDecayRate(envDecay * SAMPLERATE);
   env->setReleaseRate(envRelease * SAMPLERATE);
   env->setSustainLevel(envSustain);
-
 
   // initialize a mode to play
   //mode = midier::Mode::Ionian;
@@ -562,13 +602,21 @@ void loop1() {
     read_encoders();
 
     if ( midi_switch == false && midi_switch_setting == false ) {
-      voct_midi(CV1);
+      // no midi and we have cv input
+      //if ( cv_connected() ) {
+        voct_midi(CV1);
+      //}
     }
     read_trigger();
     MIDI.read();
 
     if ( now - update_timer > 5 ) {
-      read_cv();
+
+      // only read cvs if at least one has input
+      //if ( cv_connected() == true) {
+        read_cv();
+      //}
+
       read_buttons();
 
       // display updates
@@ -588,6 +636,41 @@ void loop1() {
       update_timer = now;
     }
   }
+}
+
+/*
+ *  set the globals to values from last saved voice parameters
+ */
+void setVoiceParameters(){
+  if (voice_number == 0) {
+      engine_in = plaits_engine; // engine_in % 17;
+      max_engines = 21;
+      morph_in = plaits_morph;
+      timbre_in = plaits_timbre;
+      harm_in = plaits_harm;
+      position_in = plaits_position;
+
+    } else if (voice_number == 1) {
+      engine_in = rings_engine;
+      max_engines = 5;
+      morph_in = rings_morph;
+      harm_in = rings_harm;
+      timbre_in = rings_timbre;
+      position_in = rings_position;
+
+    } else if (voice_number == 2 ) {
+      engine_in = braids_engine;
+      max_engines = 45;
+      morph_in = braids_morph;
+      timbre_in = braids_timbre;
+
+    } else if (voice_number == 3 ) {
+      engine_in = clouds_engine;
+      max_engines = 3;
+      morph_in = clouds_morph;
+      timbre_in = clouds_timbre;
+      harm_in = clouds_harm;
+    }
 }
 
 void read_buttons() {
@@ -692,44 +775,8 @@ void read_buttons() {
   }
 }
 
-/*
- *  set the globals to values from last saved voice parameters
- */
-
-void setVoiceParameters(){
-  if (voice_number == 0) {
-      engine_in = plaits_engine; // engine_in % 17;
-      max_engines = 21;
-      morph_in = plaits_morph;
-      timbre_in = plaits_timbre;
-      harm_in = plaits_harm;
-      position_in = plaits_position;
-
-    } else if (voice_number == 1) {
-      engine_in = rings_engine;
-      max_engines = 5;
-      morph_in = rings_morph;
-      harm_in = rings_harm;
-      timbre_in = rings_timbre;
-      position_in = rings_position;
-
-    } else if (voice_number == 2 ) {
-      engine_in = braids_engine;
-      max_engines = 45;
-      morph_in = braids_morph;
-      timbre_in = braids_timbre;
-
-    } else if (voice_number == 3 ) {
-      engine_in = clouds_engine;
-      max_engines = 3;
-      morph_in = clouds_morph;
-      timbre_in = clouds_timbre;
-      harm_in = clouds_harm;
-    }
-}
 
 float voct_midiBraids(int cv_in) {
-
   int val = 0;
   for (int j = 0; j < cv_avg; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
   val = val / cv_avg;
@@ -742,7 +789,6 @@ void voct_midi(int cv_in) {
   int val = 0;
   for (int j = 0; j < 15; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
   val = val / 15;
-
   // data = (float) val * 1.0f;
   pitch = map(val, mapping_lower_limit, mapping_upper_limit, 36, 84); // convert pitch CV data value to a MIDI note number
 
@@ -764,18 +810,15 @@ void read_trigger() {
   for (int j = 0; j < 5; ++j) trig += analogRead(41u); // read the A/D a few times and average for a more stable value
   trig = trig / 5 ;
 
-  // tricky conflicts with default uarts
   if ( midi_switch == false && midi_switch_setting == false ) {
-
-    if (trig  > 500 ) {
+    if (trig  > 3000 && ! trigger_on ) {
       trigger_in = 1.0f;
-      //trigger_on = true;
+      trigger_on = true;
       //if (millis() - envTimer > 50) {
       envTimer = millis();
       env->gate(true);
       //}
-
-    } else  {
+    } else if ( trigger_on ) {
       //don't turn off here?
       trigger_in = 0.0f;
       // don't retrigger ADSR too quickly
@@ -783,7 +826,7 @@ void read_trigger() {
       envTimer = 0;
       env->gate(false);
       //}
-      //trigger_on = false;
+      trigger_on = false;
     }
     if (voice_number == 0) updateVoicetrigger();
 
@@ -835,21 +878,6 @@ void read_cv() {
 
   }
 
-}
-
-// either avg or median, both suck :)
-int16_t avg_cv(int cv_in) {
-
-  //std::vector<int> data;
-  int16_t val = 0;
-
-  //for (int j = 0; j < cv_avg; ++j) data.push_back(analogRead(cv_in)); // val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
-  for (int j = 0; j < cv_avg; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
-  val = val / cv_avg;
-
-  //return median(data);
-
-  return val;
 }
 
 void read_encoders() {

@@ -67,7 +67,7 @@ int16_t pitch_adj = 100;
 
 void updateBraidsControl() {
 
-  pitch = voct_midiBraids(CV1);
+  //pitch = voct_midiBraids(CV1);
 
 
 }
