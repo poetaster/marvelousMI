@@ -329,14 +329,14 @@ bool cv_connected(){
   int cvs[6] = {0,0,0,0,0,0};
 
   // seed cv collection
-  for (int j = 0; j < 6; ++j) {
+  for (int j = 1; j < 6; ++j) {
       // collect cv for each input
       cvs[j] = analogRead(cv_ins[j]);
   }
 
   for (int i = 0; i < 10; i++) {
   // take 10 samples
-    for (int j = 0; j < 6; j++) {
+    for (int j = 1; j < 6; j++) {
       if ( cvs[j] != analogRead(cv_ins[j]) ) {
           return true ;
       }
@@ -613,9 +613,9 @@ void loop1() {
     if ( now - update_timer > 5 ) {
 
       // only read cvs if at least one has input
-      //if ( cv_connected() == true) {
+      if ( cv_connected() == true) {
         read_cv();
-      //}
+      }
 
       read_buttons();
 
@@ -818,7 +818,7 @@ void read_trigger() {
       envTimer = millis();
       env->gate(true);
       //}
-    } else if ( trigger_on ) {
+    } else {
       //don't turn off here?
       trigger_in = 0.0f;
       // don't retrigger ADSR too quickly

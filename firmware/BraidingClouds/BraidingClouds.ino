@@ -304,6 +304,30 @@ bool just_booting = true;
 
 //File settingsFile;
 
+// check all cv inputs and if none are changing,
+// return false 
+
+bool cv_connected(){
+
+  bool connected = false;
+  int cvs[6] = {0,0,0,0,0,0};
+
+  // seed cv collection
+  for (int j = 0; j < 6; ++j) {
+      // collect cv for each input
+      cvs[j] = analogRead(cv_ins[j]);
+  }
+
+  for (int i = 0; i < 10; i++) {
+  // take 10 samples
+    for (int j = 0; j < 6; j++) {
+      if ( cvs[j] != analogRead(cv_ins[j]) ) {
+          return true ;
+      }
+    }
+  }
+  return false;
+}
 
 void setup() {
   if (debug) {
@@ -568,8 +592,10 @@ void loop1() {
     MIDI.read();
 
     if ( now - update_timer > 5 ) {
-      read_cv();
-      read_buttons();
+      // only read cvs if at least one has input
+      //if ( cv_connected() == true) {
+        read_cv();
+      //}
 
       // display updates
       if (btn_two_state == 1) {
@@ -777,23 +803,22 @@ void read_trigger() {
   // tricky conflicts with default uarts
   if ( midi_switch == false && midi_switch_setting == false ) {
 
-    if (trig  > 500 ) {
+    if (trig  > 3000 && ! trigger_on ) {
       trigger_in = 1.0f;
-      //trigger_on = true;
+      trigger_on = true;
       //if (millis() - envTimer > 50) {
       envTimer = millis();
       env->gate(true);
       //}
 
-    } else  {
-      //don't turn off here?
+    } else if (trigger_on)  {
+      trigger_on = false;
       trigger_in = 0.0f;
       // don't retrigger ADSR too quickly
       //if (millis() - envTimer > 50) {
       envTimer = 0;
       env->gate(false);
       //}
-      //trigger_on = false;
     }
     //if (voice_number == 0) updateVoicetrigger();
 
