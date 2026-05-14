@@ -77,13 +77,27 @@ void updateRingsAudio() {
 }
 
 void updateRingsControl() {
+
+  float timbre = (timbre_in + timb_mod);
+  CONSTRAIN(timbre, 0.0f, 1.0f);
+
+  float morph = (morph_in + morph_mod);
+  CONSTRAIN(morph, 0.0f, 1.0f);
+
+  float harm = (harm_in + harm_mod);
+  CONSTRAIN(harm, 0.0f, 1.0f);
+  
+  float pos = (position_in + pos_mod);
+  CONSTRAIN(pos, 0.0f, 1.0f);
+
   float   *trig_in; // = IN(1);
   float   voct_in = pitch_in * 1.0f;
 
-  float   struct_in = harm_in;
-  float   bright_in = timbre_in + timb_mod;
-  float   damp_in = morph_in + morph_mod;
-  float   pos_in = ( position_in > 0.03f) ? position_in : 0.5f ;
+  float   struct_in = harm ;
+  float   bright_in = timbre;
+  float   damp_in = morph;
+
+  float   pos_in = pos ;
 
   short   model = engine_in;
   short   polyphony = 4;

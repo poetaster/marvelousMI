@@ -197,6 +197,7 @@ float braids_level = 1.0f;
 float fm_mod = 0.0f ; //IN(7);
 float timb_mod = 0.0f; //IN(8);
 float morph_mod = 0.0f; //IN(9);
+float harm_mod = 0.0f; //IN(9);
 float decay_in = 0.5f; // IN(10);
 float lpg_in = 0.2f ;// IN(11);
 float pitch_in = 32.0f;
@@ -839,19 +840,27 @@ void read_cv() {
   // braids wants 0 - 32767, plaits 0-1
 
   //plaits and rings cv
-  int16_t timbre = avg_cv(CV2);
+  int16_t timbre = avg_cv(CV4);
   timb_mod = (float)timbre;
-  timb_mod = mapf( timb_mod, 5.0f, 4090.0f, 0.00f, 1.00f);
+  timb_mod = mapf( timb_mod, 5.0f, 4090.0f, 0.00f, 0.60f);
   timb_mod = constrain(timb_mod, 0.00f, 1.00f);
 
-  int16_t morph = avg_cv(CV3) ;
+  int16_t morph = avg_cv(CV2) ;
   morph_mod = (float) morph;
-  morph_mod = mapf ( (float) morph_mod, 5.0f, 4090.0f, 0.00f, 1.00f);
+  morph_mod = mapf ( (float) morph_mod, 5.0f, 4090.0f, 0.00f, 0.60f);
   morph_mod = constrain(morph_mod, 0.00f, 1.00f);
 
   // don't remember if this was important
-  float pos = avg_cv(CV4) * 1.0f ; // f&d noise floor
-  pos_mod = mapf (  pos, 5.0f, 4090.0f, 0.00f, 1.00f);
+  int16_t harm = avg_cv(CV3) ; // f&d noise floor
+  harm_mod = (float) harm;
+  harm_mod = mapf (  harm, 5.0f, 4090.0f, 0.00f, 0.60f);
+  harm_mod = constrain(harm_mod, 0.00f, 1.00f);
+
+
+  // don't remember if this was important
+  int16_t pos = avg_cv(CV5) ; // f&d noise floor
+  pos_mod = (float) pos;
+  pos_mod = mapf (  pos, 5.0f, 4090.0f, 0.00f, 0.60f);
   pos_mod = constrain(pos, 0.00f, 1.00f);
 
   // plaits
@@ -861,21 +870,13 @@ void read_cv() {
   if (voice_number == 0 || voice_number == 1) {
     // plaits
 
-    timb_mod = mapf(timb_mod, 0.0f, 1.0f, 0.0f, 0.8f);
-
     //if (debug) Serial.print(timb_mod);
-
     //voices[0].modulations.timbre_patched = true;
     //voices[0].modulations.timbre_patched = false;
-    //morph_mod = mapf(morph_mod, 0.02f, 1.0f, -1.0f, 1.0f);
-
-    morph_mod = mapf(morph_mod, 0.0f, 1.0f, 0.0f, 0.8f);
-
     //voices[0].modulations.morph_patched = true;
 
   }
   if (voice_number == 3) {
-
   }
 
 }

@@ -92,7 +92,9 @@ void updatePlaitsControl() {
 
   float morph = (morph_in + morph_mod);
   CONSTRAIN(morph, 0.0f, 1.0f);
-  
+
+  float harm = (harm_in + harm_mod);
+  CONSTRAIN(harm, 0.0f, 1.0f);
 
 /*  if (pos_mod < 0.02) {
     modulation = 1.0f;
@@ -101,20 +103,18 @@ void updatePlaitsControl() {
   }
   float harm = (harm_in + pos_mod);
   */
-  float harm = constrain(harm_in, 0.0f, 1.0f);
-  //CONSTRAIN(harm, 0.0f, 1.0f);
-  
+
   voices[0].patch.engine = engine_in;
   voices[0].patch.note = pitch_in;
   voices[0].patch.harmonics = harm;
   voices[0].patch.morph = morph;
   voices[0].patch.timbre = timbre;
-  
   //voices[0].patch.timbre_modulation_amount = timb_mod;
   //voices[0].patch.morph_modulation_amount = morph_mod;
+  //
   voices[0].patch.lpg_colour = 0.2f;//lpg_in;
   voices[0].patch.decay = 0.5f;
-    
+
   /*
     voices[0].octave_ = octave_in;
      
