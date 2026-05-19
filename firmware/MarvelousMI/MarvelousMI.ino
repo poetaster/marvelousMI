@@ -538,8 +538,9 @@ void loop() {
       } else if (voice_number == 2) {
         // just mono for now
         updateBraidsAudio();
+        // braids is louder so take it down a notch
         for (size_t i = 0; i < 32; i++) {
-          int16_t sample =   (int16_t) ( (float) inst[0].pd.buffer[i] * env->process() * global_volume) ;
+          int16_t sample =   (int16_t) ( (float) inst[0].pd.buffer[i] * env->process() * ( global_volume - 0.1f ) ) ;
           DAC.write( sample );
           DAC.write( sample );
         }
@@ -841,27 +842,30 @@ void read_cv() {
 
   //plaits and rings cv
   int16_t timbre = avg_cv(CV4);
-  timb_mod = (float)timbre;
-  timb_mod = mapf( timb_mod, 5.0f, 4090.0f, 0.00f, 0.60f);
-  timb_mod = constrain(timb_mod, 0.00f, 1.00f);
+  timb_mod = (float)timbre / 4095.0f;
+  // remove offset
+  timb_mod = timb_mod - 0.5;
+  // limit to half the value
+  timb_mod = constrain(timb_mod, 0.00f, 0.60f);
 
   int16_t morph = avg_cv(CV2) ;
-  morph_mod = (float) morph;
-  morph_mod = mapf ( (float) morph_mod, 5.0f, 4090.0f, 0.00f, 0.60f);
-  morph_mod = constrain(morph_mod, 0.00f, 1.00f);
+  morph_mod = (float) morph / 4095.0f;
+  morph_mod = morph_mod - 0.5f;
+  morph_mod = constrain(morph_mod, 0.00f, 0.60f);
 
   // don't remember if this was important
   int16_t harm = avg_cv(CV3) ; // f&d noise floor
-  harm_mod = (float) harm;
-  harm_mod = mapf (  harm, 5.0f, 4090.0f, 0.00f, 0.60f);
-  harm_mod = constrain(harm_mod, 0.00f, 1.00f);
+  harm_mod = (float) harm / 4095.0f;
+  harm_mod = harm_mod - 0.5f;
+  //harm_mod = mapf (  harm, 5.0f, 4090.0f, 0.00f, 0.60f);
+  harm_mod = constrain(harm_mod, 0.00f, 0.60f);
 
 
   // don't remember if this was important
   int16_t pos = avg_cv(CV5) ; // f&d noise floor
-  pos_mod = (float) pos;
-  pos_mod = mapf (  pos, 5.0f, 4090.0f, 0.00f, 0.60f);
-  pos_mod = constrain(pos, 0.00f, 1.00f);
+  pos_mod = (float) pos / 4095.0f;
+  pos_mod = pos_mod - 0.5f;
+  pos_mod = constrain(pos, 0.00f, 0.60f);
 
   // plaits
   //int16_t lpgColor =  avg_cv(CV5);

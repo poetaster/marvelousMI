@@ -87,6 +87,14 @@ void displayADSR() {
   display.setCursor(line_2_3.x, line_2_3.y);
   display.print("S");
   drawCircle( envSustain * 100, line_2_3.x + 16, line_2_3.y ); //  timbre
+
+  display.setCursor(line_3_1.x, line_3_1.y);
+  display.print(morph_mod );
+  display.print(" ");
+  display.print(harm_mod );
+  display.print(" ");
+  display.print( (analogRead(CV6)/4095.0f) ) ;
+
   // release
   display.setCursor(line_3_3.x, line_3_3.y);
   display.print("R: ");

@@ -48,7 +48,19 @@ void updateRingsAudio() {
   }
   instance[0].prev_trig = trigger;
 
+  float gain;
+  if (engine_in == 3) {
+    gain = global_volume - 0.3f;
+  } else if (engine_in == 5) {
+    gain = global_volume + 0.3f;
+  } else if (engine_in == 0) {
+    gain = global_volume - 0.1f;
+  } else {
+    gain = global_volume + 0.2f;
+  }
+
   if (easterEgg) {
+    gain = global_volume - 0.1f;
     instance[0].strummer.Process(NULL, size, ps);
     instance[0].string_synth.Process(*ps, *patch, instance[0].silence, instance[0].out, instance[0].aux, size);
   }
@@ -56,18 +68,11 @@ void updateRingsAudio() {
     instance[0].strummer.Process(instance[0].input, size, ps);
     instance[0].part.Process(*ps, *patch, instance[0].input, instance[0].out, instance[0].aux, size);
   }
-  float gain;
-  if (engine_in == 3) {
-    gain = 1.0;
-  } else if (engine_in == 5) {
-    gain = 1.4;
-  } else {
-    gain = 1.1;
-  }
 
   for (size_t i = 0; i < size; ++i) {
     // we're reducing to mono since we actually get polyphony for free
-    out_bufferL[i] = stmlib::Clip16(static_cast<int32_t>( ( instance[0].out[i] + instance[0].aux[i] ) * 32768.0f * global_volume) );
+    out_bufferL[i] = stmlib::Clip16(static_cast<int32_t>(
+          ( ( instance[0].out[i] + instance[0].aux[i] ) * 32768.0f )  * gain ) );
     //out_bufferR[i] = stmlib::Clip16(static_cast<int32_t>( instance[0].aux[i] * 32768.0f)); 
     //out_bufferL[i] = stmlib::Clip16(static_cast<int32_t>((instance[0].out[i]+.11) * 32768.0f)); // was obuff
 
@@ -113,12 +118,12 @@ void updateRingsControl() {
 
   // check input rates for excitation input
 
-
-  if ( timb_mod > 0.50f ) {
-    // input on CV3
+ // pin floats in the middle, if we have swings, sample
+  float exc_in = analogRead(CV6) / 4095.0f - 0.45f;
+  if (  exc_in > 0.06f ) {
     // intern_exciter should be off, but user can override
     for (size_t i = 0; i < 32; ++i) {
-      CV1_buffer[i] = (float) ( avg_cv(CV6) / 1023.0f) ;
+      CV1_buffer[i] = (float) ( ( analogRead(CV6) / 4095.0f ) ) ;
     }
     instance[0].input = CV1_buffer;
     ps->internal_exciter = false;//intern_exciter;
@@ -213,10 +218,10 @@ void initRings() {
   instance[0].part.Init(instance[0].reverb_buffer);
   instance[0].string_synth.Init(instance[0].reverb_buffer);
 
-  instance[0].part.set_polyphony(3);
+  instance[0].part.set_polyphony(4);
   instance[0].part.set_model(rings::RESONATOR_MODEL_MODAL);
 
-  instance[0].string_synth.set_polyphony(3);
+  instance[0].string_synth.set_polyphony(4);
   instance[0].string_synth.set_fx(rings::FX_FORMANT);
   instance[0].prev_poly = 3;
 
