@@ -77,7 +77,7 @@ float mapf(float value, float fromLow, float fromHigh, float toLow, float toHigh
   return result;
 }
 
-int cv_avg = 7;
+int cv_avg = 3;
 int16_t avg_cv(int cv_in) {
 
   //std::vector<int> data;
@@ -540,7 +540,7 @@ void loop() {
         updateBraidsAudio();
         // braids is louder so take it down a notch
         for (size_t i = 0; i < 32; i++) {
-          int16_t sample =   (int16_t) ( (float) inst[0].pd.buffer[i] * env->process() * ( global_volume - 0.1f ) ) ;
+          int16_t sample =   (int16_t) ( (float) inst[0].pd.buffer[i] * env->process() * ( global_volume - 0.3f ) ) ;
           DAC.write( sample );
           DAC.write( sample );
         }
@@ -865,7 +865,7 @@ void read_cv() {
   int16_t pos = avg_cv(CV5) ; // f&d noise floor
   pos_mod = (float) pos / 4095.0f;
   pos_mod = pos_mod - 0.5f;
-  pos_mod = constrain(pos, 0.00f, 0.60f);
+  pos_mod = constrain(pos_mod, 0.00f, 0.60f);
 
   // plaits
   //int16_t lpgColor =  avg_cv(CV5);

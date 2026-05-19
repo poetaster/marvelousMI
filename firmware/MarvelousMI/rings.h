@@ -50,17 +50,15 @@ void updateRingsAudio() {
 
   float gain;
   if (engine_in == 3) {
-    gain = global_volume - 0.3f;
-  } else if (engine_in == 5) {
-    gain = global_volume + 0.3f;
+    gain = global_volume - 0.4f;
   } else if (engine_in == 0) {
-    gain = global_volume - 0.1f;
+    gain = global_volume ;
   } else {
-    gain = global_volume + 0.2f;
+    gain = global_volume ;
   }
 
   if (easterEgg) {
-    gain = global_volume - 0.1f;
+    gain = global_volume ;
     instance[0].strummer.Process(NULL, size, ps);
     instance[0].string_synth.Process(*ps, *patch, instance[0].silence, instance[0].out, instance[0].aux, size);
   }
