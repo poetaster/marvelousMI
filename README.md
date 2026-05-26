@@ -46,3 +46,11 @@ with that done you should be able to compile / install directly to a marvelous o
 ![schematic view](marvelous-desktop_schem.jpg)
 
 <a href="https://www.tindie.com/stores/poetaster/?ref=offsite_badges&utm_source=sellers_poetaster&utm_medium=badges&utm_campaign=badge_small"><img src="https://d2ss6ovg47m0r5.cloudfront.net/badges/tindie-smalls.png" alt="I sell on Tindie" width="200" height="55"></a>. I'm also on etsy at https://tonetoys.etsy.com ....
+
+
+## hardware notes.
+
+Marvelous uses the XSMT pin of the PCM5102a for mute, which means a number od things need to be observed.
+1. Do not solder the jumper H3L on the bottom of the board. It's connected. 
+2. DO solder the other jumpers, H1,H2,H4 and take them all L (low).
+
