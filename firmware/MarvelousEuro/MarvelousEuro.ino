@@ -128,9 +128,9 @@ float CV1_buffer[32];
 
 // button inputs
 #define SW1 14 //38 // was 34
-#define SW2 38
+#define SW2 7 
 #define SW3 39
-#define SW4 7
+#define SW4 38
 
 #include <Bounce2.h>
 Bounce2::Button btn_one = Bounce2::Button();
@@ -253,8 +253,8 @@ const int encoderSW_pin = 28;
 // ugly, but using both ranges does not work
 // this depends on poetasters version of the arduino library
 #include "pio_encoder.h"
-PioEncoder enc1(10, PIO pio0);
-PioEncoder enc2(3, PIO pio0);
+PioEncoder enc1(10, PIO pio0); // 9/10 flipped
+PioEncoder enc2(2, PIO pio0);
 PioEncoder enc3(8, PIO pio0);
 
 // PioEncoder enc4(6, PIO pio0);
@@ -262,7 +262,7 @@ PioEncoder enc3(8, PIO pio0);
 
 #include <RotaryEncoder.h>
 // Setup a RotaryEncoder without pio/ the meta: 6, 7 usually
-RotaryEncoder enc4( 37,  38,  RotaryEncoder::LatchMode::FOUR3);
+RotaryEncoder enc4( 36,  37,  RotaryEncoder::LatchMode::FOUR3);
 
 int enc1_pos_last = 0;
 int enc1_delta = 0;
@@ -359,9 +359,9 @@ void setup() {
   enc1.begin();
   enc1.flip(); // only on the green blue encoders
   enc2.begin();
-  enc2.flip(); // only on the green blue encoders
+  //enc2.flip(); // only on the green blue encoders
   enc3.begin();
-  enc3.flip(); // only on the green blue encoders
+  //enc3.flip(); // only on the green blue encoders
 
   delay(100);
 
@@ -899,11 +899,11 @@ void read_encoders() {
   // on timbre and position
   if ( enc1_delta) {
     if (btn_three_state == 0 && btn_two_state == 0) {
-      float turn = ( enc1_delta * 0.01f ) + timbre_in;
+      float turn = ( enc1_delta * 0.03f ) + timbre_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       timbre_in = turn;
     } else if (btn_three_state == 1 && btn_two_state == 0) {
-      float turn = ( enc1_delta * 0.01f ) + position_in;
+      float turn = ( enc1_delta * 0.03f ) + position_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       position_in = turn;
     } else if ( btn_two_state == 1) {
@@ -923,16 +923,16 @@ void read_encoders() {
   }
   if (enc2_delta) {
     if (btn_two_state == 0 && btn_one_state == 0) {
-      float turn = ( enc2_delta * 0.01f ) + morph_in;
+      float turn = ( enc2_delta * 0.03f ) + morph_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       morph_in = turn;
     } else if (btn_two_state == 1 && btn_one_state == 0) {
-      float turn = ( enc2_delta * 0.01f ) + envDecay;
+      float turn = ( enc2_delta * 0.03f ) + envDecay;
       CONSTRAIN(turn, 0.f, 1.0f)
       envDecay = turn;
       env->setDecayRate(envDecay * SAMPLERATE);  // .01 second
     } else if (btn_one_state == 1) {
-      float turn = ( enc2_delta * 0.01f ) + global_volume;
+      float turn = ( enc2_delta * 0.03f ) + global_volume;
       CONSTRAIN(turn, 0.f, 1.0f)
       global_volume = turn;
     }
@@ -947,11 +947,11 @@ void read_encoders() {
   }
   if (enc3_delta) {
     if (btn_two_state == 0) {
-      float turn = ( enc3_delta * 0.01f ) + harm_in;
+      float turn = ( enc3_delta * 0.03f ) + harm_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       harm_in = turn;
     } else {
-      float turn = ( enc3_delta * 0.01f ) + envSustain;
+      float turn = ( enc3_delta * 0.03f ) + envSustain;
       CONSTRAIN(turn, 0.f, 1.0f)
       envSustain = turn;
       env->setSustainLevel(envSustain);
@@ -973,7 +973,7 @@ void read_encoders() {
       }
       engine_in = engineCount;
     } else {
-      float turn = ( (int) enc4.getDirection() * 0.01f ) + envAttack;
+      float turn = ( (int) enc4.getDirection() * 0.03f ) + envAttack;
       CONSTRAIN(turn, 0.f, 1.0f)
       envAttack = turn;
       env->setAttackRate(envAttack * SAMPLERATE);  // .01 second
