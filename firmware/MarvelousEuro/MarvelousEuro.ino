@@ -376,7 +376,7 @@ void setup() {
 
 
   // doesn't really get us anything
-  //analogReadResolution(12);
+  analogReadResolution(12);
 
   // thi is to switch to PWM for power to avoid ripple noise
   pinMode(23, OUTPUT);
@@ -783,23 +783,29 @@ float voct_midiBraids(int cv_in) {
   int val = 0;
   for (int j = 0; j < cv_avg; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
   val = val / cv_avg;
-  pitch = pitch_offset + map(val, 0.0, 1023.0, mapping_upper_limit, 0.0); // convert pitch CV data value to a MIDI note number
+  pitch = pitch_offset + map(val, 0.0, 4095.0, mapping_upper_limit, 0.0); // convert pitch CV data value to a MIDI note number
   return pitch - 37; // don't know why, probably tuned to A so -5 + -36 to drop two octaves
 }
 
 
 void voct_midi(int cv_in) {
   int val = 0;
-  for (int j = 0; j < 9; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
-  val = val / 9;
+  for (int j = 0; j < 7; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
+  val = val / 7;
+  // the low and high points where it drifts
+  if (val < 580)  val = val + 15;
+  if (val < 780)  val = val + 12;
+  if (val > 1500) val = val -11;
+
+  pitch = map( val, 0, 4095, 0, 120); // convert pitch CV data value to a MIDI note number
   int delta = abs(voltage -val);
 
-  if (delta > 2) {
-    pitch = map( val, 0, 1023, 0, 120); // convert pitch CV data value to a MIDI note number
+  if (delta > 5) {
+    pitch = map( val, 0, 4095, 0, 120); // convert pitch CV data value to a MIDI note number
     voltage = val;
   }
 
-  pitch_in = pitch + 24;
+  pitch_in = pitch + 23;
 
   // this is a temporary move to get around clicking on trigger + note cv in
   if (pitch != previous_pitch) {
@@ -816,7 +822,7 @@ void read_trigger() {
   trig = trig / 5 ;
 
   if ( midi_switch == false && midi_switch_setting == false ) {
-    if (trig  > 400 && ! trigger_on ) {
+    if (trig  > 500 && ! trigger_on ) {
       trigger_in = 1.0f;
       trigger_on = true;
       //if (millis() - envTimer > 50) {
@@ -845,20 +851,20 @@ void read_cv() {
 
   //plaits and rings cv
   int16_t timbre = avg_cv(CV5);
-  timb_mod = (float)timbre / 1023.0f;
+  timb_mod = (float)timbre / 4095.0f;
   // remove offset if using the diode clamp
   //timb_mod = timb_mod - 0.5;
   // limit to half the value
   timb_mod = constrain(timb_mod, 0.00f, 0.60f);
 
   int16_t morph = avg_cv(CV3) ;
-  morph_mod = (float) morph / 1023.0f;
+  morph_mod = (float) morph / 4095.0f;
   //morph_mod = morph_mod - 0.5f;
   morph_mod = constrain(morph_mod, 0.00f, 0.60f);
 
   // don't remember if this was important
   int16_t harm = avg_cv(CV4) ; // f&d noise floor
-  harm_mod = (float) harm / 1023.0f;
+  harm_mod = (float) harm / 4095.0f;
   //harm_mod = harm_mod - 0.5f;
   //harm_mod = mapf (  harm, 5.0f, 4090.0f, 0.00f, 0.60f);
   harm_mod = constrain(harm_mod, 0.00f, 0.60f);
@@ -866,7 +872,7 @@ void read_cv() {
 
   // don't remember if this was important
   int16_t pos = avg_cv(CV6) ; // f&d noise floor
-  pos_mod = (float) pos / 1023.0f;
+  pos_mod = (float) pos / 4095.0f;
   //pos_mod = pos_mod - 0.5f;
   pos_mod = constrain(pos_mod, 0.00f, 0.60f);
 
