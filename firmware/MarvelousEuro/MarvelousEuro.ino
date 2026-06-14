@@ -44,9 +44,9 @@ bool midi_switch_setting = false;
 #include <I2S.h>
 #define SAMPLERATE 48000
 
-#define pBCLK 8
+#define pBCLK 12 
 #define pWS (pBCLK+1)
-#define pDOUT 10
+#define pDOUT 15
 I2S DAC(OUTPUT, pBCLK, pDOUT);
 
 // create ADSR env
@@ -102,24 +102,24 @@ float data;
 float pitch;
 float pitch_offset = 0; // 36 in mmm 10volt input
 float freq;
-
+int voltage;
 float max_voltage_of_adc = 3.3;
 float voltage_division_ratio = 0.3333333333333;
 float notes_per_octave = 12;
 float volts_per_octave = 0.54;
-float mapping_upper_limit = 4090; //60.0f; //(max_voltage_of_adc / voltage_division_ratio) * notes_per_octave * volts_per_octave;
-float mapping_lower_limit = 5; //36.0f;
+float mapping_upper_limit = 4095; //60.0f; //(max_voltage_of_adc / voltage_division_ratio) * notes_per_octave * volts_per_octave;
+float mapping_lower_limit = 0; //36.0f;
 
 
 // trigger is on gp0
 
 // cv input
-#define CV1 (42u)
+#define CV1 (40u)
 #define CV2 (43u)
-#define CV3 (44u)
-#define CV4 (45u)
-#define CV5 (46u)
-#define CV6 (47u)
+#define CV3 (41u)
+#define CV4 (44u)
+#define CV5 (42u)
+#define CV6 (46u)
 
 int cv_ins[6] = {CV1, CV2, CV3, CV4, CV5, CV6};
 
@@ -127,9 +127,9 @@ int cv_ins[6] = {CV1, CV2, CV3, CV4, CV5, CV6};
 float CV1_buffer[32];
 
 // button inputs
-#define SW1 14 //38 // was 34
-#define SW2 7 
-#define SW3 39
+#define SW2 14 //38 // was 34
+#define SW3 7 
+#define SW1 39
 #define SW4 38
 
 #include <Bounce2.h>
@@ -253,9 +253,9 @@ const int encoderSW_pin = 28;
 // ugly, but using both ranges does not work
 // this depends on poetasters version of the arduino library
 #include "pio_encoder.h"
-PioEncoder enc1(10, PIO pio0); // 9/10 flipped
-PioEncoder enc2(2, PIO pio0);
-PioEncoder enc3(8, PIO pio0);
+PioEncoder enc2(10);//, PIO pio0); // 9/10 flipped
+PioEncoder enc1(2);//, PIO pio0);
+PioEncoder enc3(8);//, PIO pio0);
 
 // PioEncoder enc4(6, PIO pio0);
 // sadly we need a second approach.
@@ -357,7 +357,7 @@ void setup() {
   //pio_set_gpio_base(PIO pio0, 0);
 
   enc1.begin();
-  enc1.flip(); // only on the green blue encoders
+  //enc1.flip(); // only on the green blue encoders
   enc2.begin();
   //enc2.flip(); // only on the green blue encoders
   enc3.begin();
@@ -376,15 +376,15 @@ void setup() {
 
 
   // doesn't really get us anything
-  analogReadResolution(12);
+  //analogReadResolution(12);
 
   // thi is to switch to PWM for power to avoid ripple noise
   pinMode(23, OUTPUT);
   digitalWrite(23, HIGH);
 
   // mute mute is LOW
-  pinMode(11, OUTPUT);
-  digitalWrite(11, HIGH);
+  pinMode(47, OUTPUT);
+  digitalWrite(47, HIGH);
 
   pinMode(LED_BUILTIN, OUTPUT);
 
@@ -606,14 +606,15 @@ void loop1() {
     if ( midi_switch == false && midi_switch_setting == false ) {
       // no midi and we have cv input
       //if ( cv_connected() ) {
-        voct_midi(CV1);
+        //voct_midi(CV1);
       //}
     }
     read_trigger();
     MIDI.read();
 
-    if ( now - update_timer > 5 ) {
+    if ( now - update_timer > 2 ) {
 
+      voct_midi(CV1);
       // only read cvs if at least one has input
       if ( cv_connected() == true) {
         read_cv();
@@ -751,8 +752,8 @@ void read_buttons() {
     // send null data for (21ms @ 48kHz)
 
     writing = true;
-    digitalWrite(11, HIGH);
-    digitalWrite(11, LOW);
+    digitalWrite(47, HIGH);
+    digitalWrite(47, LOW);
     int16_t sampleL = 0;
     unsigned long now = millis();
 
@@ -766,8 +767,8 @@ void read_buttons() {
     setVoiceParameters();
 
     delay(1);
-    digitalWrite(11, LOW);
-    digitalWrite(11, HIGH);
+    digitalWrite(47, LOW);
+    digitalWrite(47, HIGH);
     writing = false;
   }
 
@@ -782,21 +783,23 @@ float voct_midiBraids(int cv_in) {
   int val = 0;
   for (int j = 0; j < cv_avg; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
   val = val / cv_avg;
-  pitch = pitch_offset + map(val, 0.0, 4095.0, mapping_upper_limit, 0.0); // convert pitch CV data value to a MIDI note number
+  pitch = pitch_offset + map(val, 0.0, 1023.0, mapping_upper_limit, 0.0); // convert pitch CV data value to a MIDI note number
   return pitch - 37; // don't know why, probably tuned to A so -5 + -36 to drop two octaves
 }
 
 
 void voct_midi(int cv_in) {
   int val = 0;
-  for (int j = 0; j < 15; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
-  val = val / 15;
-  // data = (float) val * 1.0f;
-  pitch = map(val, mapping_lower_limit, mapping_upper_limit, 36, 84); // convert pitch CV data value to a MIDI note number
+  for (int j = 0; j < 9; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
+  val = val / 9;
+  int delta = abs(voltage -val);
 
-  //pitch = pitch - pitch_offset;
+  if (delta > 2) {
+    pitch = map( val, 0, 1023, 0, 120); // convert pitch CV data value to a MIDI note number
+    voltage = val;
+  }
 
-  pitch_in = pitch;
+  pitch_in = pitch + 24;
 
   // this is a temporary move to get around clicking on trigger + note cv in
   if (pitch != previous_pitch) {
@@ -809,11 +812,11 @@ void voct_midi(int cv_in) {
 // in marvelous, moved to digital pin tx/gp0
 void read_trigger() {
   int16_t trig ;
-  for (int j = 0; j < 5; ++j) trig += analogRead(41u); // read the A/D a few times and average for a more stable value
+  for (int j = 0; j < 5; ++j) trig += analogRead(CV2); // read the A/D a few times and average for a more stable value
   trig = trig / 5 ;
 
   if ( midi_switch == false && midi_switch_setting == false ) {
-    if (trig  > 3000 && ! trigger_on ) {
+    if (trig  > 400 && ! trigger_on ) {
       trigger_in = 1.0f;
       trigger_on = true;
       //if (millis() - envTimer > 50) {
@@ -841,30 +844,30 @@ void read_cv() {
   // braids wants 0 - 32767, plaits 0-1
 
   //plaits and rings cv
-  int16_t timbre = avg_cv(CV4);
-  timb_mod = (float)timbre / 4095.0f;
-  // remove offset
-  timb_mod = timb_mod - 0.5;
+  int16_t timbre = avg_cv(CV5);
+  timb_mod = (float)timbre / 1023.0f;
+  // remove offset if using the diode clamp
+  //timb_mod = timb_mod - 0.5;
   // limit to half the value
   timb_mod = constrain(timb_mod, 0.00f, 0.60f);
 
-  int16_t morph = avg_cv(CV2) ;
-  morph_mod = (float) morph / 4095.0f;
-  morph_mod = morph_mod - 0.5f;
+  int16_t morph = avg_cv(CV3) ;
+  morph_mod = (float) morph / 1023.0f;
+  //morph_mod = morph_mod - 0.5f;
   morph_mod = constrain(morph_mod, 0.00f, 0.60f);
 
   // don't remember if this was important
-  int16_t harm = avg_cv(CV3) ; // f&d noise floor
-  harm_mod = (float) harm / 4095.0f;
-  harm_mod = harm_mod - 0.5f;
+  int16_t harm = avg_cv(CV4) ; // f&d noise floor
+  harm_mod = (float) harm / 1023.0f;
+  //harm_mod = harm_mod - 0.5f;
   //harm_mod = mapf (  harm, 5.0f, 4090.0f, 0.00f, 0.60f);
   harm_mod = constrain(harm_mod, 0.00f, 0.60f);
 
 
   // don't remember if this was important
-  int16_t pos = avg_cv(CV5) ; // f&d noise floor
-  pos_mod = (float) pos / 4095.0f;
-  pos_mod = pos_mod - 0.5f;
+  int16_t pos = avg_cv(CV6) ; // f&d noise floor
+  pos_mod = (float) pos / 1023.0f;
+  //pos_mod = pos_mod - 0.5f;
   pos_mod = constrain(pos_mod, 0.00f, 0.60f);
 
   // plaits

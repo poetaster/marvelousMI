@@ -219,6 +219,8 @@ void displayBraids() {
   // // name
   display.setCursor(line_1_1.x, line_1_1.y);
   display.print(braidsnames[engine_in]);
+  display.print(" ");
+  display.print(voltage);
 
   // volume
   display.setCursor(line_1_3.x, line_1_3.y);
