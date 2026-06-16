@@ -80,7 +80,7 @@ void initPlaits() {
 
 
 void updatePlaitsAudio() {
-  voices[0].voice_->Render(voices[0].patch, voices[0].modulations,  outputPlaits,  plaits::kBlockSize);  
+  voices[0].voice_->Render(voices[0].patch, voices[0].modulations,  outputPlaits,  plaits::kBlockSize);
 }
 
 void updatePlaitsControl() {
@@ -117,28 +117,23 @@ void updatePlaitsControl() {
 
   /*
     voices[0].octave_ = octave_in;
-     
     voices[0].patch.lpg_colour = 0.2;
   */
 }
 
 void updateVoicetrigger() {
-  bool trigger = (trigger_in > 0.0f);
-  bool trigger_flag = (trigger && (!voices[0].last_trig));
-  voices[0].last_trig = trigger;
+  bool trig = (trigger_in == 1.0f);
+  bool trigger_flag = (trig && (!voices[0].last_trig));
 
   if (trigger_flag) {
-   // voice[0].patch.decay = 0.2f;
     voices[0].modulations.level = 1.0f;
-    voices[0].modulations.level_patched = true; 
+    voices[0].modulations.level_patched = true;
     voices[0].modulations.trigger = 1.0f;
     voices[0].modulations.trigger_patched = true;
 
   } else {
     voices[0].modulations.trigger_patched = false;
     voices[0].modulations.trigger = 0.0f;
-
   }
-  // seem to need to do this for plaits?
-  trigger_in = 0.0f;
+  voices[0].last_trig = trig;
 }

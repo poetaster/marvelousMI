@@ -38,16 +38,6 @@ void updateRingsAudio() {
 
   size_t  size = rings::kMaxBlockSize;
 
-  // only do trigger actions if we are in focus.
-  bool trigger = (trigger_in > 0.0f);
-  bool trigger_flag = (trigger && (!instance[0].prev_trig));
-  if ( trigger_flag) {
-    ps->strum = true;
-  } else {
-    ps->strum = false;
-  }
-  instance[0].prev_trig = trigger;
-
   float gain;
   if (engine_in == 3) {
     gain = global_volume - 0.4f;
@@ -103,7 +93,7 @@ void updateRingsControl() {
   float   pos_in = pos ;
 
   short   model = engine_in;
-  short   polyphony = 4;
+  short   polyphony = 3;
   bool    intern_exciter = true;
   bool    easter_egg = easterEgg;
   bool    bypass = false;
@@ -115,8 +105,13 @@ void updateRingsControl() {
   size_t  size = rings::kMaxBlockSize;
 
   // check input rates for excitation input
+ instance[0].input = instance[0].silence;
+    // ... and use internal exciter!
+ ps->internal_exciter = intern_exciter;
 
  // pin floats in the middle, if we have swings, sample
+ // currently disabled
+ /*
   float exc_in = analogRead(CV6) / 4095.0f - 0.45f;
   if (  exc_in > 0.06f ) {
     // intern_exciter should be off, but user can override
@@ -130,7 +125,7 @@ void updateRingsControl() {
     instance[0].input = instance[0].silence;
     // ... and use internal exciter!
     ps->internal_exciter = true;
-  }
+  }*/
 
 
   /* from the original with gain foo
@@ -182,7 +177,18 @@ void updateRingsControl() {
   patch->position = pos_in;
 
   // check trigger input
-  //
+  bool trigger = (trigger_in == 1.0f);
+  bool trigger_flag = (trigger && !instance[0].prev_trig );
+  instance[0].prev_trig = trigger;
+
+  if ( trigger_flag) {
+    ps->strum = true;
+  } else {
+    ps->strum = false;
+  }
+  instance[0].prev_trig = trigger;
+
+ //
   instance[0].part.set_bypass(bypass);
 
 }

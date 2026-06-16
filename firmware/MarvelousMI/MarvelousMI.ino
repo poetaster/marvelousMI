@@ -899,11 +899,11 @@ void read_encoders() {
   // on timbre and position
   if ( enc1_delta) {
     if (btn_three_state == 0 && btn_two_state == 0) {
-      float turn = ( enc1_delta * 0.005f ) + timbre_in;
+      float turn = ( enc1_delta * 0.01f ) + timbre_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       timbre_in = turn;
     } else if (btn_three_state == 1 && btn_two_state == 0) {
-      float turn = ( enc1_delta * 0.005f ) + position_in;
+      float turn = ( enc1_delta * 0.01f ) + position_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       position_in = turn;
     } else if ( btn_two_state == 1) {
@@ -923,16 +923,16 @@ void read_encoders() {
   }
   if (enc2_delta) {
     if (btn_two_state == 0 && btn_one_state == 0) {
-      float turn = ( enc2_delta * 0.005f ) + morph_in;
+      float turn = ( enc2_delta * 0.01f ) + morph_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       morph_in = turn;
     } else if (btn_two_state == 1 && btn_one_state == 0) {
-      float turn = ( enc2_delta * 0.005f ) + envDecay;
+      float turn = ( enc2_delta * 0.01f ) + envDecay;
       CONSTRAIN(turn, 0.f, 1.0f)
       envDecay = turn;
       env->setDecayRate(envDecay * SAMPLERATE);  // .01 second
     } else if (btn_one_state == 1) {
-      float turn = ( enc2_delta * 0.005f ) + global_volume;
+      float turn = ( enc2_delta * 0.01f ) + global_volume;
       CONSTRAIN(turn, 0.f, 1.0f)
       global_volume = turn;
     }
@@ -947,11 +947,11 @@ void read_encoders() {
   }
   if (enc3_delta) {
     if (btn_two_state == 0) {
-      float turn = ( enc3_delta * 0.005f ) + harm_in;
+      float turn = ( enc3_delta * 0.01f ) + harm_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       harm_in = turn;
     } else {
-      float turn = ( enc3_delta * 0.005f ) + envSustain;
+      float turn = ( enc3_delta * 0.01f ) + envSustain;
       CONSTRAIN(turn, 0.f, 1.0f)
       envSustain = turn;
       env->setSustainLevel(envSustain);
@@ -973,7 +973,7 @@ void read_encoders() {
       }
       engine_in = engineCount;
     } else {
-      float turn = ( (int) enc4.getDirection() * 0.005f ) + envAttack;
+      float turn = ( (int) enc4.getDirection() * 0.01f ) + envAttack;
       CONSTRAIN(turn, 0.f, 1.0f)
       envAttack = turn;
       env->setAttackRate(envAttack * SAMPLERATE);  // .01 second

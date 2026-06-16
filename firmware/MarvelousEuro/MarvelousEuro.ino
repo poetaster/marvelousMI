@@ -155,7 +155,7 @@ int16_t sample_buffer[32]; // used while we play samples for demo
 // voice params
 int voice_number = 0; // for switching  between modules
 
-float global_volume = 0.6;
+float global_volume = 0.7;
 
 // we are reusing the plaits nomenclature for all modules
 // Plaits modulation vars
@@ -254,8 +254,8 @@ const int encoderSW_pin = 28;
 // this depends on poetasters version of the arduino library
 #include "pio_encoder.h"
 PioEncoder enc2(10);//, PIO pio0); // 9/10 flipped
-PioEncoder enc1(2);//, PIO pio0);
-PioEncoder enc3(8);//, PIO pio0);
+PioEncoder enc3(2);//, PIO pio0);
+PioEncoder enc1(8);//, PIO pio0);
 
 // PioEncoder enc4(6, PIO pio0);
 // sadly we need a second approach.
@@ -359,7 +359,7 @@ void setup() {
   enc1.begin();
   //enc1.flip(); // only on the green blue encoders
   enc2.begin();
-  //enc2.flip(); // only on the green blue encoders
+  enc2.flip(); // only on the green blue encoders
   enc3.begin();
   //enc3.flip(); // only on the green blue encoders
 
@@ -412,6 +412,12 @@ void setup() {
   displaySplash();
 
   // buttons
+// button inputs
+// SW2 14 C
+// SW3 7  B
+// SW1 39 A
+// SW4 38 Meta
+
 
   btn_four.attach( SW4 , INPUT_PULLUP);
   btn_four.interval(5);
@@ -421,12 +427,11 @@ void setup() {
   btn_one.interval(5);
   btn_one.setPressedState(LOW);
 
-  btn_two.attach( SW2 , INPUT_PULLUP);
+  btn_two.attach( SW3 , INPUT_PULLUP);
   btn_two.interval(5);
   btn_two.setPressedState(LOW);
 
-
-  btn_three.attach( SW3 , INPUT_PULLUP);
+  btn_three.attach( SW2 , INPUT_PULLUP);
   btn_three.interval(5);
   btn_three.setPressedState(LOW);
 
@@ -623,7 +628,7 @@ void loop1() {
       read_buttons();
 
       // display updates
-      if (btn_two_state == 1) {
+      if (btn_three_state == 1) {
         displayADSR();
       } else {
         if (voice_number == 0) {
@@ -829,7 +834,7 @@ void read_trigger() {
       envTimer = millis();
       env->gate(true);
       //}
-    } else {
+    } else if (trigger_on && trig < 500){
       //don't turn off here?
       trigger_in = 0.0f;
       // don't retrigger ADSR too quickly
@@ -839,8 +844,7 @@ void read_trigger() {
       //}
       trigger_on = false;
     }
-    if (voice_number == 0) updateVoicetrigger();
-
+     if (voice_number == 0) updateVoicetrigger();
   }
 
 }
@@ -907,17 +911,17 @@ void read_encoders() {
   // encoder 3 does double duty
   // on timbre and position
   if ( enc1_delta) {
-    if (btn_three_state == 0 && btn_two_state == 0) {
-      float turn = ( enc1_delta * 0.03f ) + timbre_in;
+    if (btn_two_state == 0 && btn_three_state == 0) {
+      float turn = ( enc1_delta * 0.01f ) + timbre_in;
       CONSTRAIN(turn, 0.f, 1.0f)
-      timbre_in = turn;
-    } else if (btn_three_state == 1 && btn_two_state == 0) {
-      float turn = ( enc1_delta * 0.03f ) + position_in;
+      timbre_in = turn ;
+    } else if (btn_two_state == 1 && btn_three_state == 0) {
+      float turn = ( enc1_delta * 0.01f ) + position_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       position_in = turn;
-    } else if ( btn_two_state == 1) {
+    } else if ( btn_three_state == 1 ) {
       float turn =  enc1_delta  + envRelease;
-      CONSTRAIN(turn, 1, 10)
+      CONSTRAIN(turn, 1, 30)
       envRelease = turn;
       env->setReleaseRate(envRelease * SAMPLERATE);
     }
@@ -931,19 +935,19 @@ void read_encoders() {
     enc2_delta = (enc2_pos - enc2_pos_last) ;
   }
   if (enc2_delta) {
-    if (btn_two_state == 0 && btn_one_state == 0) {
-      float turn = ( enc2_delta * 0.03f ) + morph_in;
+    if (btn_two_state == 0 && btn_three_state == 0) {
+      float turn = ( enc2_delta * 0.01f ) + morph_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       morph_in = turn;
-    } else if (btn_two_state == 1 && btn_one_state == 0) {
-      float turn = ( enc2_delta * 0.03f ) + envDecay;
+    } else if (btn_two_state == 1 && btn_three_state == 0) {
+      float turn = ( enc2_delta * 0.02f ) + global_volume;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      global_volume = turn;
+    } else if (btn_three_state == 1 ) {
+      float turn = ( enc2_delta * 0.01f ) + envDecay;
       CONSTRAIN(turn, 0.f, 1.0f)
       envDecay = turn;
       env->setDecayRate(envDecay * SAMPLERATE);  // .01 second
-    } else if (btn_one_state == 1) {
-      float turn = ( enc2_delta * 0.03f ) + global_volume;
-      CONSTRAIN(turn, 0.f, 1.0f)
-      global_volume = turn;
     }
   }
   enc2_pos_last = enc2_pos;
@@ -955,12 +959,12 @@ void read_encoders() {
     enc3_delta = (enc3_pos - enc3_pos_last);
   }
   if (enc3_delta) {
-    if (btn_two_state == 0) {
-      float turn = ( enc3_delta * 0.03f ) + harm_in;
+    if (btn_three_state == 0) {
+      float turn = ( enc3_delta * 0.01f ) + harm_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       harm_in = turn;
-    } else {
-      float turn = ( enc3_delta * 0.03f ) + envSustain;
+    } else if (btn_three_state == 1 ) {
+      float turn = ( enc3_delta * 0.02f ) + envSustain;
       CONSTRAIN(turn, 0.f, 1.0f)
       envSustain = turn;
       env->setSustainLevel(envSustain);
@@ -973,7 +977,7 @@ void read_encoders() {
   // meta encoder turned to cycle through voice engines
   int enc4_pos = enc4.getPosition();
   if ( enc4_pos != enc4_pos_last ) {
-    if (btn_two_state == 0) {
+    if (btn_three_state == 0) {
       engineCount =  (int) enc4.getDirection()  + engineCount ;
       if (engineCount < 0) {
         engineCount = max_engines;
@@ -981,13 +985,29 @@ void read_encoders() {
         engineCount = 0;
       }
       engine_in = engineCount;
-    } else {
-      float turn = ( (int) enc4.getDirection() * 0.03f ) + envAttack;
+    } else if (btn_three_state == 1) {
+      float turn = ( (int) enc4.getDirection() * 0.02f ) + envAttack;
       CONSTRAIN(turn, 0.f, 1.0f)
       envAttack = turn;
       env->setAttackRate(envAttack * SAMPLERATE);  // .01 second
     }
   }
   enc4_pos_last = enc4_pos;
+}
+
+void slideTo(float* which, float from, float to) {
+
+  // up or down?
+  float increment = 0.0f;
+  if (from > to) {
+    increment = -0.001f;
+  } else {
+    increment = 0.001f;
+  }
+
+  while (from != to){
+    from = from + increment;
+    *which = from;
+  }
 
 }
