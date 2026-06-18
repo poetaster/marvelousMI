@@ -49,6 +49,12 @@ bool midi_switch_setting = false;
 #define pDOUT 15
 I2S DAC(OUTPUT, pBCLK, pDOUT);
 
+
+// calibration global
+bool calibrating = false;
+int octaveTotal = 6;
+int octaveOffset = 0;
+
 // create ADSR env
 #include "ADSR.h"
 ADSR *env = new ADSR();
@@ -261,8 +267,9 @@ PioEncoder enc1(8);//, PIO pio0);
 // sadly we need a second approach.
 
 #include <RotaryEncoder.h>
-// Setup a RotaryEncoder without pio/ the meta: 6, 7 usually
-RotaryEncoder enc4( 36,  37,  RotaryEncoder::LatchMode::FOUR3);
+// Setup a RotaryEncoder without pio/ the meta: 36, 37 usually
+// bournes is flipped
+RotaryEncoder enc4( 37,  36,  RotaryEncoder::LatchMode::FOUR3);
 
 int enc1_pos_last = 0;
 int enc1_delta = 0;
@@ -355,13 +362,13 @@ void setup() {
   // start encoders MUST be first because of PIO init?
   //pio_set_gpio_base(PIO pio1, 16); this fails, do it in begin.
   //pio_set_gpio_base(PIO pio0, 0);
-
+  // the flips here are for bournes encoders
   enc1.begin();
-  //enc1.flip(); // only on the green blue encoders
+  enc1.flip(); // only on the green blue encoders
   enc2.begin();
-  enc2.flip(); // only on the green blue encoders
+  //enc2.flip(); // only on the green blue encoders
   enc3.begin();
-  //enc3.flip(); // only on the green blue encoders
+  enc3.flip(); // only on the green blue encoders
 
   delay(100);
 
@@ -519,7 +526,8 @@ void setup() {
 void loop() {
 
   if ( DAC.availableForWrite()) {
-    if ( ! writing) {
+    if ( ! writing && ! calibrating) {
+
       if (voice_number == 0) {
         updatePlaitsAudio();
         // now apply the envelope
@@ -578,8 +586,8 @@ void loop() {
         }
       }
       */
-      } // end writing
-   } // end available for write
+    } // end writing
+  } // end available for write
 
 }
 
@@ -628,8 +636,11 @@ void loop1() {
       read_buttons();
 
       // display updates
-      if (btn_three_state == 1) {
+
+      if (btn_three_state == 1 && ! calibrating) {
         displayADSR();
+      } else if (calibrating) {
+        displayCalibration();
       } else {
         if (voice_number == 0) {
           displayPlaits();
@@ -641,6 +652,7 @@ void loop1() {
           displayClouds();
         }
       }
+
       update_timer = now;
     }
   }
@@ -709,9 +721,10 @@ void read_buttons() {
         longPress = true;
       }
       // clouds, not used
-      if ( voice_number == 3 && ! btn_two.pressed()) {
-        freeze_in = !freeze_in;
-        longPress = true;
+      if ( voice_number == 0 && ! btn_two.pressed()) {
+        //freeze_in = !freeze_in;
+        //longPress = true;
+        calibrating = ! calibrating;
       }
     } else if (btnOneLastTime < 350 ) {
       btn_one_state = !btn_one_state;
@@ -795,22 +808,27 @@ float voct_midiBraids(int cv_in) {
 
 void voct_midi(int cv_in) {
   int val = 0;
-  for (int j = 0; j < 7; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
-  val = val / 7;
+  for (int j = 0; j < 5; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
+  val = val / 5;
+  if (calibrating) {
+    mapping_upper_limit = val;
+  }
   // the low and high points where it drifts
+  /* this was the euro-1 tag version with 3300 x 3 on voct / trigger input
   if (val < 580)  val = val + 15;
   if (val < 780)  val = val + 12;
   if (val > 1500) val = val -11;
+  */
 
-  pitch = map( val, 0, 4095, 0, 120); // convert pitch CV data value to a MIDI note number
   int delta = abs(voltage -val);
+  int variance =  10; //mapping_upper_limit / ( (  octaveTotal * 12 )  - 10 );
 
-  if (delta > 5) {
-    pitch = map( val, 0, 4095, 0, 120); // convert pitch CV data value to a MIDI note number
+  if (delta > variance) {
+    pitch = map( val, 0, mapping_upper_limit, 24, ( octaveTotal * 12) + octaveOffset ); // convert pitch CV data value to a MIDI note number
     voltage = val;
   }
 
-  pitch_in = pitch + 23;
+  pitch_in = pitch ;
 
   // this is a temporary move to get around clicking on trigger + note cv in
   if (pitch != previous_pitch) {
@@ -935,7 +953,11 @@ void read_encoders() {
     enc2_delta = (enc2_pos - enc2_pos_last) ;
   }
   if (enc2_delta) {
-    if (btn_two_state == 0 && btn_three_state == 0) {
+    if (calibrating) {
+      int turn = enc2_delta + octaveOffset;
+      CONSTRAIN(turn, 0, 36)
+      octaveOffset = turn;
+    } else if (btn_two_state == 0 && btn_three_state == 0) {
       float turn = ( enc2_delta * 0.01f ) + morph_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       morph_in = turn;
@@ -959,7 +981,11 @@ void read_encoders() {
     enc3_delta = (enc3_pos - enc3_pos_last);
   }
   if (enc3_delta) {
-    if (btn_three_state == 0) {
+    if (calibrating) {
+      int turn = enc3_delta + octaveTotal;
+      CONSTRAIN(turn, 2, 8)
+      octaveTotal = turn;
+    }  else if (btn_three_state == 0) {
       float turn = ( enc3_delta * 0.01f ) + harm_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       harm_in = turn;

@@ -62,6 +62,34 @@ void updateGauges() {
   drawCircle( timbre_in * 100, line_2_3.x + 16, line_2_3.y ); //  timbre
 }
 
+void displayCalibration() {
+  display.clearDisplay();
+  display.setFont(&Org_01);
+  // // name
+  display.setCursor(line_1_1.x, line_1_1.y);
+  display.print("Calibrate");
+  // volume
+  display.setCursor(line_1_3.x, line_1_3.y);
+  display.print("V");
+  drawCircle( global_volume * 100, line_1_3.x + 16, line_1_3.y ); // global volume
+
+  // offset octave from 0
+  display.setCursor(line_2_1.x, line_2_1.y);
+  display.print("Offset ");
+  display.print(octaveOffset);
+
+  //  total number of divisions (ocatveTotal * 12)
+  display.setCursor(line_2_2.x + 16, line_2_2.y);
+  display.print("Total ");
+  display.print(octaveTotal);
+
+  // upper bounds on ADC input
+  display.setCursor(line_3_2.x, line_3_2.y);
+  display.print("High: ");
+  display.print(mapping_upper_limit, 2);
+
+  display.display();
+}
 void displayADSR() {
   display.clearDisplay();
   display.setFont(&Org_01);
@@ -111,8 +139,8 @@ void displayPlaits() {
   // // name
   display.setCursor(line_1_1.x, line_1_1.y);
   display.print(oscnames[engine_in]);
-  //display.print(" ");
-  //display.print(btn_three_state);
+  display.print(" ");
+  display.print(voltage);
 
   // volume
   display.setCursor(line_1_3.x, line_1_3.y);
