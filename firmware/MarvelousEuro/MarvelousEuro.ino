@@ -50,11 +50,6 @@ bool midi_switch_setting = false;
 I2S DAC(OUTPUT, pBCLK, pDOUT);
 
 
-// calibration global
-bool calibrating = false;
-int octaveTotal = 6;
-int octaveOffset = 0;
-
 // create ADSR env
 #include "ADSR.h"
 ADSR *env = new ADSR();
@@ -63,7 +58,6 @@ float envDecay;
 int envRelease;
 float envSustain;
 long envTimer = 0;
-
 
 
 // utility
@@ -102,8 +96,14 @@ int16_t avg_cv(int cv_in) {
  *  set the globals to values from last saved voice parameters
  */
 
-// volts to octave for 3.3 volts
-// based on https://little-scale.blogspot.com/2018/05/pitch-cv-to-frequency-conversion-via.html
+// calibration global
+// we are simply using the mapping_upper_limit set by reading CV1 ADC
+// while in calibration mode as the top and dividing by number of notes
+// on the niftykeyz, 6 octaves get's us the full range.
+
+bool calibrating = false;
+int octaveTotal = 10;
+int octaveOffset = 0;
 float data;
 float pitch;
 float pitch_offset = 0; // 36 in mmm 10volt input
@@ -983,7 +983,7 @@ void read_encoders() {
   if (enc3_delta) {
     if (calibrating) {
       int turn = enc3_delta + octaveTotal;
-      CONSTRAIN(turn, 2, 8)
+      CONSTRAIN(turn, 2, 10)
       octaveTotal = turn;
     }  else if (btn_three_state == 0) {
       float turn = ( enc3_delta * 0.01f ) + harm_in;
