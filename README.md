@@ -4,6 +4,9 @@ marvelousMI is a fritzing project and PCB gerbers for a small desktop Mutable In
 
 https://github.com/poetaster/arduinoMI
 
+The 'marvelous' version is a eurorack version with slightly different ADC input handling (voltage dividers instead of diode clamps).
+
+
 This is a basic circuit around an Olimex Pico2-xxl using a pcm5102 DAC for audio.
 
 The firmware directory includes a complete synth with 3 parts:
