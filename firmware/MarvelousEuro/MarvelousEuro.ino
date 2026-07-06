@@ -786,21 +786,22 @@ float voct_midiBraids(int cv_in) {
 
 void voct_midi(int cv_in) {
   int val = 0;
-  for (int j = 0; j < 5; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
-  val = val / 5;
+  for (int j = 0; j < 3; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
+  val = val / 3;
   if (calibrating) {
     mapping_upper_limit = val;
   }
 
   int delta = abs(voltage -val);
-  int variance =  5; //mapping_upper_limit / ( (  octaveTotal * 12 )  - 10 );
+  int variance =  4; //mapping_upper_limit / ( (  octaveTotal * 12 )  - 10 );
 
   if (delta > variance) {
-    pitch = map( val, 0, mapping_upper_limit, 24, ( octaveTotal * 12) + octaveOffset ); // convert pitch CV data value to a MIDI note number
+    pitch = map( val, 0, mapping_upper_limit, 24, ( octaveTotal * 12) ); // convert pitch CV data value to a MIDI note number
     voltage = val;
+    pitch = pitch+octaveOffset;
   }
 
-  pitch_in = pitch ;
+  pitch_in = pitch;
 
   // this is a temporary move to get around clicking on trigger + note cv in
   if (pitch != previous_pitch) {
