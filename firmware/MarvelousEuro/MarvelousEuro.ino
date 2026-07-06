@@ -793,7 +793,7 @@ void voct_midi(int cv_in) {
   }
 
   int delta = abs(voltage -val);
-  int variance =  4; //mapping_upper_limit / ( (  octaveTotal * 12 )  - 10 );
+  int variance =  5; //mapping_upper_limit / ( (  octaveTotal * 12 )  - 10 );
 
   if (delta > variance) {
     pitch = map( val, 0, mapping_upper_limit, 24, ( octaveTotal * 12) ); // convert pitch CV data value to a MIDI note number
