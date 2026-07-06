@@ -147,82 +147,6 @@ void updateValues(){
 
 }
 
-void printConfigSlot(ConfigSlot slot) {
-  // Print plaits array
-  Serial.println("plaits: ");
-  for (int i = 0; i < 8; i++) {
-    Serial.print(slot.plaits[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  // Print rings array
-  Serial.println("rings: ");
-  for (int i = 0; i < 8; i++) {
-    Serial.print(slot.rings[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  // Print braids array
-  Serial.println("braids: ");
-  for (int i = 0; i < 8; i++) {
-    Serial.print(slot.braids[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  // Print clouds array
-  Serial.println("clouds: ");
-  for (int i = 0; i < 8; i++) {
-    Serial.print(slot.clouds[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  // Print adsr array
-  Serial.println("adsr: ");
-  for (int i = 0; i < 4; i++) {
-    Serial.print(slot.adsr[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  // Print tempo
-  Serial.print("tempo: ");
-  Serial.println(slot.tempo);
-
-  // Print internalClock
-  Serial.print("internalClock: ");
-  Serial.println(slot.internalClock ? "true" : "false");
-
-  // Print lastUsedSlot
-  Serial.print("lastUsedSlot: ");
-  Serial.println(slot.lastUsedSlot);
-
-  // Print selectedPreset
-  Serial.print("selectedPreset: ");
-  Serial.println(slot.selectedPreset);
-
-  // Print voiceNumber
-  Serial.print("voiceNumber: ");
-  Serial.println(slot.voiceNumber);
-}
-
-/* track of current preset and slot outside of the general config
-* permit loading correct preset/slot at boot with less overhead
-*/
-void saveCurrentPreset(int preset) {
-  uint8_t baseAddress = 10;
-  EEPROM.write(baseAddress, preset);
-  if (EEPROM.commit()) {
-    if (debug) Serial.println("EEPROM wrote preset");
-  } else {
-      eeprom_error = 1.1;
-    if (debug) Serial.println("ERROR! EEPROM commit failed");
-  }
-}
-
 void loadLastPreset() {
   uint8_t baseAddress = 10;
   selected_preset = EEPROM.read(baseAddress);
@@ -272,8 +196,6 @@ void saveToEEPROM(int slot) {
   }
   if (EEPROM.commit()) {
     if (debug) Serial.println("EEPROM successfully committed");
-    printConfigSlot(currentConfig);
-    saveCurrentPreset(slot);  // update the currently set preset
   } else {
     eeprom_error = 1.3;
     if (debug) Serial.println("ERROR! EEPROM commit failed");
