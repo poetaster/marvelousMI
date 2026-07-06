@@ -1,6 +1,6 @@
 /* EEPROM  mostly from modulove A-RYTH-MATIK
 */
-#define EEPROM_START_ADDRESS 50
+#define EEPROM_START_ADDRESS 30
 #define NUM_PRESETS 1
 #define CONFIG_SIZE (sizeof(ConfigSlot))
 #define LAST_USED_SLOT_ADDRESS (EEPROM_START_ADDRESS + NUM_PRESETS * CONFIG_SIZE)
@@ -14,6 +14,7 @@ struct ConfigSlot {
   byte braids[8];
   byte clouds[8];
   byte adsr[4];
+  byte cvinit[3];
   int tempo;                      // Tempo for the preset
   bool internalClock;             // Clock source state
   byte lastUsedSlot;              // Last used slot
@@ -28,6 +29,7 @@ const ConfigSlot defaultSlots[NUM_PRESETS] = PROGMEM {
     { 127, 127, 127, 127, 127, 127, 0, 0 },  //braids
     { 127, 127, 127, 127, 127, 127, 0, 0 },  //clouds
     { 13, 77, 5, 204 },              //adsr
+    { 255, 0, 10 },              //mapping_upper_limit, octaveOffset, octaveTotal
     120,
     0 ,
     0 ,
@@ -62,8 +64,10 @@ float u8ToFloat(uint8_t value) {
 
 void updateSlot() {
     // globals
+
     currentConfig.voiceNumber = voice_number;  // which engine
-                           // adsr
+
+    // adsr
     currentConfig.adsr[0] = floatToU8(envAttack);
     currentConfig.adsr[1] = floatToU8(envDecay );
     currentConfig.adsr[2] = envRelease;
@@ -97,11 +101,22 @@ void updateSlot() {
     currentConfig.clouds[3] = floatToU8(clouds_position );
     currentConfig.clouds[4] = floatToU8(clouds_level );
     currentConfig.clouds[5] = clouds_engine;
+
+    // cv calibration
+    currentConfig.cvinit[0] = (byte) map(mapping_upper_limit, 0,4095, 0, 255);
+    currentConfig.cvinit[1] = octaveOffset;
+    currentConfig.cvinit[2] = octaveTotal;
+
 }
 
 void updateValues(){
 
     voice_number = currentConfig.voiceNumber;  // which engine
+    // cv calibration
+    mapping_upper_limit =  map(currentConfig.cvinit[0], 0, 255, 0, 4095)  ;
+    octaveOffset = currentConfig.cvinit[1] ;
+    octaveTotal = currentConfig.cvinit[2] ;
+
     // adsr
     envAttack = u8ToFloat(currentConfig.adsr[0]);
     envDecay = u8ToFloat(currentConfig.adsr[1]);
@@ -147,84 +162,9 @@ void updateValues(){
 
 }
 
-void printConfigSlot(ConfigSlot slot) {
-  // Print plaits array
-  Serial.println("plaits: ");
-  for (int i = 0; i < 8; i++) {
-    Serial.print(slot.plaits[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  // Print rings array
-  Serial.println("rings: ");
-  for (int i = 0; i < 8; i++) {
-    Serial.print(slot.rings[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  // Print braids array
-  Serial.println("braids: ");
-  for (int i = 0; i < 8; i++) {
-    Serial.print(slot.braids[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  // Print clouds array
-  Serial.println("clouds: ");
-  for (int i = 0; i < 8; i++) {
-    Serial.print(slot.clouds[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  // Print adsr array
-  Serial.println("adsr: ");
-  for (int i = 0; i < 4; i++) {
-    Serial.print(slot.adsr[i]);
-    Serial.print(" ");
-  }
-  Serial.println();
-
-  // Print tempo
-  Serial.print("tempo: ");
-  Serial.println(slot.tempo);
-
-  // Print internalClock
-  Serial.print("internalClock: ");
-  Serial.println(slot.internalClock ? "true" : "false");
-
-  // Print lastUsedSlot
-  Serial.print("lastUsedSlot: ");
-  Serial.println(slot.lastUsedSlot);
-
-  // Print selectedPreset
-  Serial.print("selectedPreset: ");
-  Serial.println(slot.selectedPreset);
-
-  // Print voiceNumber
-  Serial.print("voiceNumber: ");
-  Serial.println(slot.voiceNumber);
-}
-
-/* track of current preset and slot outside of the general config
-* permit loading correct preset/slot at boot with less overhead
-*/
-void saveCurrentPreset(int preset) {
-  uint8_t baseAddress = 10;
-  EEPROM.write(baseAddress, preset);
-  if (EEPROM.commit()) {
-    if (debug) Serial.println("EEPROM wrote preset");
-  } else {
-      eeprom_error = 1.1;
-    if (debug) Serial.println("ERROR! EEPROM commit failed");
-  }
-}
 
 void loadLastPreset() {
-  uint8_t baseAddress = 10;
+  uint8_t baseAddress = 30;
   selected_preset = EEPROM.read(baseAddress);
   if (debug) Serial.print("Last preset: ");
   if (debug) Serial.println(selected_preset);
@@ -245,7 +185,7 @@ void loadInit() {
  */
 void writeInit() {
   uint8_t baseAddress = 20;
-  EEPROM.write(baseAddress, 1);
+  EEPROM.write(baseAddress, 3);
   if (EEPROM.commit()) {
     if (debug) Serial.println("EEPROM wrote preset");
   } else {
@@ -272,8 +212,6 @@ void saveToEEPROM(int slot) {
   }
   if (EEPROM.commit()) {
     if (debug) Serial.println("EEPROM successfully committed");
-    printConfigSlot(currentConfig);
-    saveCurrentPreset(slot);  // update the currently set preset
   } else {
     eeprom_error = 1.3;
     if (debug) Serial.println("ERROR! EEPROM commit failed");

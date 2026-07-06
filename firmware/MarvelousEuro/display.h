@@ -346,4 +346,5 @@ void displaySplash() {
   display.setCursor(15, 32);
   display.print("MarvelousMI");
   display.display();
+  delay(500);
 }

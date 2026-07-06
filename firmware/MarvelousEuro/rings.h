@@ -29,7 +29,7 @@ struct Ring {
 
 struct Ring instance[1];
 
-bool easterEgg;
+bool easterEgg = false; // because a button rise takes place, default to true which will be set false just after boot
 
 void updateRingsAudio() {
 

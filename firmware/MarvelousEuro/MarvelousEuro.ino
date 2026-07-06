@@ -21,13 +21,9 @@ bool debug = false;
 #include <vector>
 #include <algorithm>
 
+/*
 #include <SoftwareSerial.h>
-
 #include <MIDI.h>
-
-//MIDI_CREATE_DEFAULT_INSTANCE();
-// this method permits us to use arbitrary pins
-// in pico land this is also a PIO statemachine (uart)
 
 using Transport = MIDI_NAMESPACE::SerialMIDI<SoftwareSerial>;
 int rxPin = 1;
@@ -35,7 +31,9 @@ int txPin = 3;
 SoftwareSerial mySerial = SoftwareSerial(rxPin, txPin); //thruActivated
 Transport serialMIDI(mySerial);
 MIDI_NAMESPACE::MidiInterface<Transport> MIDI((Transport&)serialMIDI);
+*/
 
+//MIDI_CREATE_DEFAULT_INSTANCE();
 
 // start with CV input, switch on midi in or setting.
 bool midi_switch = false;
@@ -102,8 +100,8 @@ int16_t avg_cv(int cv_in) {
 // on the niftykeyz, 6 octaves get's us the full range.
 
 bool calibrating = false;
-int octaveTotal = 10;
-int octaveOffset = 0;
+byte octaveTotal = 6;
+byte octaveOffset = 0;
 float data;
 float pitch;
 float pitch_offset = 0; // 36 in mmm 10volt input
@@ -144,9 +142,9 @@ Bounce2::Button btn_two = Bounce2::Button();
 Bounce2::Button btn_four = Bounce2::Button();
 Bounce2::Button btn_three = Bounce2::Button();
 
-int btn_three_state = 0;
-int btn_two_state = 0;
-int btn_one_state = 0;
+int btn_three_state;
+int btn_two_state;
+int btn_one_state;
 
 // Generic pin state variable
 byte pinState;
@@ -319,9 +317,9 @@ int engineCount = 0;
 bool button_state = true;
 
 // last time btn_one release
-unsigned long btnOneLastTime;
-unsigned long btnTwoLastTime;
-unsigned long btnFourLastTime;
+unsigned long btnOneLastTime = 0;
+unsigned long btnTwoLastTime = 0;
+unsigned long btnFourLastTime = 0;
 int32_t previous_pitch = 40;
 
 bool just_booting = true;
@@ -475,9 +473,8 @@ void setup() {
   EEPROM.begin(2048);
   delay(150);
 
-  if (just_booting) {
     loadInit();
-    if (device_initialized == 1 ) {
+    if (device_initialized == 3 ) {
       // only one for now 
       //loadLastPreset(); // sets selected_preset from base eeprom save point
       loadMemorySlots();
@@ -491,34 +488,13 @@ void setup() {
       writeInit(); // set flag for next boot
     }
 
-    just_booting = false;
-  }
 
   // set up midi last, debugging
-  MIDI.setHandleNoteOn(HandleMidiNoteOn);  // Put only the name of the function
-  MIDI.setHandleNoteOff(HandleMidiNoteOff);  // Put only the name of the function
-  MIDI.setHandleControlChange(HandleControlChange);  // Put only the name of the function
+  //MIDI.setHandleNoteOn(HandleMidiNoteOn);  // Put only the name of the function
+  //MIDI.setHandleNoteOff(HandleMidiNoteOff);  // Put only the name of the function
+  //MIDI.setHandleControlChange(HandleControlChange);  // Put only the name of the function
   // Initiate MIDI communications, listen to all channels (not needed with Teensy usbMIDI)
-  MIDI.begin(MIDI_CHANNEL_OMNI);
-
-  /*
-  int sensorValue;
-
-  // calibrate note in CV1
-  while (millis() < 5000) {
-    sensorValue = analogRead(CV1);
-
-    // record the maximum sensor value
-    if (sensorValue > mapping_upper_limit) {
-      mapping_upper_limit = sensorValue;
-    }
-
-    // record the minimum sensor value
-    if (sensorValue < mapping_lower_limit) {all tabs to spaces
-      mapping_lower_limit = sensorValue;
-    }
-  }
-  */
+  //MIDI.begin(MIDI_CHANNEL_OMNI);
 
 }
 
@@ -623,7 +599,7 @@ void loop1() {
       //}
     }
     read_trigger();
-    MIDI.read();
+    //MIDI.read();
 
     if ( now - update_timer > 2 ) {
 
@@ -699,7 +675,6 @@ void read_buttons() {
   bool longPress = false;
   int oneState = btn_one.read();
   int twoState = btn_two.read();
-
   int fourState = btn_four.read();
 
   // we toggle button three for either position or timber encoder action
@@ -710,24 +685,27 @@ void read_buttons() {
   if ( btn_two.pressed() ) {
       btn_two_state = !btn_two_state;
   }
+  if ( btn_one.pressed() ) {
+    just_booting = false;
+  }
 
   // if button one was held for more than 300 millis and we're in rings toggle easteregg
-  if ( btn_one.rose() ) {
+  // the just booting doesn't actually play a role here. TO-DO
 
+  if ( btn_one.rose() && ! just_booting ) {
     btnOneLastTime = btn_one.previousDuration();
-    if ( btnOneLastTime > 350 && ! btn_two.pressed()) {
+    if ( btnOneLastTime > 350 ) {
       if ( voice_number == 1 ) {
         easterEgg = !easterEgg;
-        longPress = true;
       }
       // clouds, not used
-      if ( voice_number == 0 && ! btn_two.pressed()) {
-        //freeze_in = !freeze_in;
-        //longPress = true;
+      if ( voice_number == 0 ) {
         calibrating = ! calibrating;
       }
+      longPress = true;
     } else if (btnOneLastTime < 350 ) {
       btn_one_state = !btn_one_state;
+      longPress = false;
     }
   }
 
@@ -813,15 +791,9 @@ void voct_midi(int cv_in) {
   if (calibrating) {
     mapping_upper_limit = val;
   }
-  // the low and high points where it drifts
-  /* this was the euro-1 tag version with 3300 x 3 on voct / trigger input
-  if (val < 580)  val = val + 15;
-  if (val < 780)  val = val + 12;
-  if (val > 1500) val = val -11;
-  */
 
   int delta = abs(voltage -val);
-  int variance =  10; //mapping_upper_limit / ( (  octaveTotal * 12 )  - 10 );
+  int variance =  5; //mapping_upper_limit / ( (  octaveTotal * 12 )  - 10 );
 
   if (delta > variance) {
     pitch = map( val, 0, mapping_upper_limit, 24, ( octaveTotal * 12) + octaveOffset ); // convert pitch CV data value to a MIDI note number
