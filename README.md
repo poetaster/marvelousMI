@@ -48,7 +48,7 @@ with that done you should be able to compile / install directly to a marvelous o
 ![pcb view](marvelous-desktop_pcb.jpg)
 ![schematic view](marvelous-desktop_schem.jpg)
 
-<a href="https://www.tindie.com/stores/poetaster/?ref=offsite_badges&utm_source=sellers_poetaster&utm_medium=badges&utm_campaign=badge_small"><img src="https://d2ss6ovg47m0r5.cloudfront.net/badges/tindie-smalls.png" alt="I sell on Tindie" width="200" height="55"></a>. I'm also on etsy at https://tonetoys.etsy.com ....
+<a href="https://www.tindie.com/stores/poetaster/?ref=offsite_badges&utm_source=sellers_poetaster&utm_medium=badges&utm_campaign=badge_small"><img src="https://d2ss6ovg47m0r5.cloudfront.net/badges/tindie-smalls.png" alt="I sell on Tindie" width="200" height="55"></a>. I'm also on bigcartel at https://tonetoys.bigcartel.com/ ....
 
 
 ## hardware notes.
