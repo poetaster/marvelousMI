@@ -786,14 +786,15 @@ float voct_midiBraids(int cv_in) {
 
 void voct_midi(int cv_in) {
   int val = 0;
-  for (int j = 0; j < 3; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
-  val = val / 3;
+  //val = analogRead(cv_in); // read the A/D a few times and average for a more stable value
+  for (int j = 0; j < 9; ++j) val += analogRead(cv_in); // read the A/D a few times and average for a more stable value
+  val = val / 9;
   if (calibrating) {
     mapping_upper_limit = val;
   }
 
   int delta = abs(voltage -val);
-  int variance =  5; //mapping_upper_limit / ( (  octaveTotal * 12 )  - 10 );
+  int variance =  4; //mapping_upper_limit / ( (  octaveTotal * 12 )  - 10 );
 
   if (delta > variance) {
     pitch = map( val, 0, mapping_upper_limit, 24, ( octaveTotal * 12) ); // convert pitch CV data value to a MIDI note number
@@ -850,26 +851,26 @@ void read_cv() {
   // remove offset if using the diode clamp
   //timb_mod = timb_mod - 0.5;
   // limit to half the value
-  timb_mod = constrain(timb_mod, 0.00f, 0.60f);
+  timb_mod = constrain(timb_mod, 0.00f, 0.80f);
 
   int16_t morph = avg_cv(CV3) ;
   morph_mod = (float) morph / 4095.0f;
   //morph_mod = morph_mod - 0.5f;
-  morph_mod = constrain(morph_mod, 0.00f, 0.60f);
+  morph_mod = constrain(morph_mod, 0.00f, 0.80f);
 
   // don't remember if this was important
   int16_t harm = avg_cv(CV4) ; // f&d noise floor
   harm_mod = (float) harm / 4095.0f;
   //harm_mod = harm_mod - 0.5f;
   //harm_mod = mapf (  harm, 5.0f, 4090.0f, 0.00f, 0.60f);
-  harm_mod = constrain(harm_mod, 0.00f, 0.60f);
+  harm_mod = constrain(harm_mod, 0.00f, 0.80f);
 
 
   // don't remember if this was important
   int16_t pos = avg_cv(CV6) ; // f&d noise floor
   pos_mod = (float) pos / 4095.0f;
   //pos_mod = pos_mod - 0.5f;
-  pos_mod = constrain(pos_mod, 0.00f, 0.60f);
+  pos_mod = constrain(pos_mod, 0.00f, 0.80f);
 
   // plaits
   //int16_t lpgColor =  avg_cv(CV5);
@@ -902,7 +903,11 @@ void read_encoders() {
   // encoder 3 does double duty
   // on timbre and position
   if ( enc1_delta) {
-    if (btn_two_state == 0 && btn_three_state == 0) {
+    if (calibrating) {
+      int turn = enc1_delta + octaveTotal;
+      CONSTRAIN(turn, 2, 10)
+      octaveTotal = turn;
+    }  else if (btn_two_state == 0 && btn_three_state == 0) {
       float turn = ( enc1_delta * 0.01f ) + timbre_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       timbre_in = turn ;
@@ -926,18 +931,10 @@ void read_encoders() {
     enc2_delta = (enc2_pos - enc2_pos_last) ;
   }
   if (enc2_delta) {
-    if (calibrating) {
-      int turn = enc2_delta + octaveOffset;
-      CONSTRAIN(turn, 0, 36)
-      octaveOffset = turn;
-    } else if (btn_two_state == 0 && btn_three_state == 0) {
+    if (btn_two_state == 0 && btn_three_state == 0) {
       float turn = ( enc2_delta * 0.01f ) + morph_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       morph_in = turn;
-    } else if (btn_two_state == 1 && btn_three_state == 0) {
-      float turn = ( enc2_delta * 0.02f ) + global_volume;
-      CONSTRAIN(turn, 0.f, 1.0f)
-      global_volume = turn;
     } else if (btn_three_state == 1 ) {
       float turn = ( enc2_delta * 0.01f ) + envDecay;
       CONSTRAIN(turn, 0.f, 1.0f)
@@ -955,13 +952,17 @@ void read_encoders() {
   }
   if (enc3_delta) {
     if (calibrating) {
-      int turn = enc3_delta + octaveTotal;
-      CONSTRAIN(turn, 2, 10)
-      octaveTotal = turn;
-    }  else if (btn_three_state == 0) {
+      int turn = enc3_delta + octaveOffset;
+      CONSTRAIN(turn, 0, 24)
+      octaveOffset = turn;
+    }  else if (btn_two_state == 0 && btn_three_state == 0) {
       float turn = ( enc3_delta * 0.01f ) + harm_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       harm_in = turn;
+    } else if (btn_two_state == 1 && btn_three_state == 0) {
+      float turn = ( enc3_delta * 0.02f ) + global_volume;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      global_volume = turn;
     } else if (btn_three_state == 1 ) {
       float turn = ( enc3_delta * 0.02f ) + envSustain;
       CONSTRAIN(turn, 0.f, 1.0f)

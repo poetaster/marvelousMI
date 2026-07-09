@@ -17,7 +17,7 @@ struct ConfigSlot {
   byte cvinit[3];
   int tempo;                      // Tempo for the preset
   bool internalClock;             // Clock source state
-  byte lastUsedSlot;              // Last used slot
+  byte globalVolume;              // Global volume
   byte selectedPreset;            // last used preset / slot > 10 is an eeprom slot
   byte voiceNumber;               // last used preset / slot > 10 is an eeprom slot
 };
@@ -28,11 +28,11 @@ const ConfigSlot defaultSlots[NUM_PRESETS] = PROGMEM {
     { 127, 127, 127, 127, 127, 127, 0, 0 },  //rings
     { 127, 127, 127, 127, 127, 127, 0, 0 },  //braids
     { 127, 127, 127, 127, 127, 127, 0, 0 },  //clouds
-    { 13, 77, 5, 204 },              //adsr
-    { 255, 0, 10 },              //mapping_upper_limit, octaveOffset, octaveTotal
+    { 13, 77, 5, 204 },                      //adsr
+    { 255, 0, 10 },                          //mapping_upper_limit, octaveOffset, octaveTotal
     120,
     0 ,
-    0 ,
+    168 ,                                    // Global volume
     0 ,
     0 }
 };
@@ -41,7 +41,6 @@ ConfigSlot memorySlots[NUM_PRESETS], currentConfig;
 
 float eeprom_error = 0.0f;
 uint8_t internalClock = 0;
-uint8_t lastUsedSlot = 0;
 bool offset_buf[8][16];  //offset buffer , Stores the offset result
 
 // selected_preset = (selected_preset + increment + sizeof(defaultSlots) / sizeof(ConfigSlot)) % (sizeof(defaultSlots) / sizeof(ConfigSlot));
@@ -66,6 +65,7 @@ void updateSlot() {
     // globals
 
     currentConfig.voiceNumber = voice_number;  // which engine
+    currentConfig.globalVolume = floatToU8(global_volume);  // global volume
 
     // adsr
     currentConfig.adsr[0] = floatToU8(envAttack);
@@ -111,7 +111,9 @@ void updateSlot() {
 
 void updateValues(){
 
-    voice_number = currentConfig.voiceNumber;  // which engine
+    voice_number = currentConfig.voiceNumber;
+    global_volume = u8ToFloat(currentConfig.globalVolume);
+
     // cv calibration
     mapping_upper_limit =  map(currentConfig.cvinit[0], 0, 255, 0, 4095)  ;
     octaveOffset = currentConfig.cvinit[1] ;
@@ -201,7 +203,6 @@ void saveToEEPROM(int slot) {
     updateSlot();
     currentConfig.tempo = bpm;
     //currentConfig.internalClock = internalClock;
-    currentConfig.lastUsedSlot = slot;
     currentConfig.selectedPreset = selected_preset;
     EEPROM.put(baseAddress, currentConfig);
   } else {
@@ -321,7 +322,6 @@ void loadFromEEPROM(int slot) {
     EEPROM.get(baseAddress, currentConfig);
     bpm = currentConfig.tempo;
     internalClock = currentConfig.internalClock;
-    //lastUsedSlot = slot;
     //selected_preset = currentConfig.selectedPreset;
     if (debug) Serial.println(bpm);
     //period = 60000 / bpm / 4;  // Update period with loaded tempo
@@ -345,12 +345,11 @@ void initializeCurrentConfig(bool loadDefaults = false) {
     EEPROM.get(baseAddress, currentConfig);
     bpm = currentConfig.tempo;                     // Load tempo
     internalClock = currentConfig.internalClock;     // Load clock state
-    lastUsedSlot = currentConfig.lastUsedSlot;       // Load last used slot
     selected_preset = currentConfig.selectedPreset;  // Load last used preset
     if (selected_preset < NUM_PRESETS) {             // we use overflow to determine if we're in eeprom
       loadFromPreset(selected_preset);
     } else {
-      loadFromEEPROM(lastUsedSlot);
+      loadFromEEPROM(1);
     }
   }
 }
