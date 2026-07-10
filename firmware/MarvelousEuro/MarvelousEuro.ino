@@ -252,7 +252,8 @@ bool reading = false;
 const int encoderSW_pin = 28;
 
 // encoder related // 2,3 8,9
-
+// define bournes here for the two variants, one with ec11 and one with bournes
+#define BOURNES 1
 
 // ugly, but using both ranges does not work
 // this depends on poetasters version of the arduino library
@@ -267,7 +268,11 @@ PioEncoder enc1(8);//, PIO pio0);
 #include <RotaryEncoder.h>
 // Setup a RotaryEncoder without pio/ the meta: 36, 37 usually
 // bournes is flipped
-RotaryEncoder enc4( 37,  36,  RotaryEncoder::LatchMode::FOUR3);
+#if defined(BOURNES)
+RotaryEncoder enc4( 37,  36,  RotaryEncoder::LatchMode::FOUR3); // bournes
+#else
+RotaryEncoder enc4( 36,  37,  RotaryEncoder::LatchMode::FOUR3); // mark
+#endif
 
 int enc1_pos_last = 0;
 int enc1_delta = 0;
@@ -361,12 +366,20 @@ void setup() {
   //pio_set_gpio_base(PIO pio1, 16); this fails, do it in begin.
   //pio_set_gpio_base(PIO pio0, 0);
   // the flips here are for bournes encoders
+#if defined(BOURNES)
   enc1.begin();
-  enc1.flip(); // only on the green blue encoders
+  enc1.flip(); 
   enc2.begin();
-  //enc2.flip(); // only on the green blue encoders
+  //enc2.flip(); 
   enc3.begin();
-  enc3.flip(); // only on the green blue encoders
+  enc3.flip(); 
+#else
+  // mark
+  enc1.begin();
+  enc2.begin();
+  enc2.flip(); 
+  enc3.begin();
+#endif
 
   delay(100);
 
@@ -986,7 +999,7 @@ void read_encoders() {
       }
       engine_in = engineCount;
     } else if (btn_three_state == 1) {
-      float turn = ( (int) enc4.getDirection() * 0.02f ) + envAttack;
+      float turn = ( (int) enc4.getDirection() * 0.08f ) + envAttack;
       CONSTRAIN(turn, 0.f, 1.0f)
       envAttack = turn;
       env->setAttackRate(envAttack * SAMPLERATE);  // .01 second

@@ -343,8 +343,8 @@ void displaySplash() {
   display.setFont(&myfont);
   display.setTextColor(WHITE, 0);
   display.drawRect(0, 0, dw - 1, dh - 1, WHITE);
-  display.setCursor(15, 32);
-  display.print("MarvelousMI");
+  display.setCursor(18, 18);
+  display.print("Marvelous");
   display.display();
-  delay(500);
+  delay(1500);
 }
