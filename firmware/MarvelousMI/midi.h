@@ -44,18 +44,15 @@ void makeScale(midier::Note root, midier::Mode mode) {
 void HandleMidiNoteOn(byte channel, byte note, byte velocity) {
   pitch_in = note;
   trigger_in = velocity / 127.0;
-
-
   digitalWrite(LED_BUILTIN, HIGH);
   midi_switch = true;
-  //env->reset();
+  //if (env->getState() != 0) env->reset();
   envTimer = millis();
   env->gate(true);
 }
+
 void HandleMidiNoteOff(byte channel, byte note, byte velocity) {
-
   trigger_in = 0.0f;
-
   //aSin.setFreq(mtof(float(note)));
   //envelope.noteOn();
   digitalWrite(LED_BUILTIN, LOW);

@@ -98,6 +98,11 @@ int16_t avg_cv(int cv_in) {
 
 // volts to octave for 3.3 volts
 // based on https://little-scale.blogspot.com/2018/05/pitch-cv-to-frequency-conversion-via.html
+bool calibrating = false;
+byte octaveTotal = 6;
+byte octaveOffset = 0;
+int voltage;
+
 float data;
 float pitch;
 float pitch_offset = 0; // 36 in mmm 10volt input
@@ -681,7 +686,6 @@ void read_buttons() {
   bool longPress = false;
   int oneState = btn_one.read();
   int twoState = btn_two.read();
-
   int fourState = btn_four.read();
 
   // we toggle button three for either position or timber encoder action
@@ -884,6 +888,112 @@ void read_cv() {
   }
 
 }
+/*
+void read_encoders() {
+
+  // enc4 meta is an exceptoin
+  enc4.tick();
+
+  // first encoder actually, third
+  int enc1_pos = enc1.getCount() / 4;
+  if ( enc1_pos != enc1_pos_last ) {
+    enc1_delta = (enc1_pos - enc1_pos_last) ;
+  }
+  // encoder 3 does double duty
+  // on timbre and position
+  if ( enc1_delta) {
+    if (calibrating) {
+      int turn = enc1_delta + octaveTotal;
+      CONSTRAIN(turn, 2, 10)
+      octaveTotal = turn;
+    }  else if (btn_two_state == 0 && btn_three_state == 0) {
+      float turn = ( enc1_delta * 0.01f ) + timbre_in;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      timbre_in = turn ;
+    } else if (btn_two_state == 1 && btn_three_state == 0) {
+      float turn = ( enc1_delta * 0.01f ) + position_in;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      position_in = turn;
+    } else if ( btn_three_state == 1 ) {
+      float turn =  enc1_delta  + envRelease;
+      CONSTRAIN(turn, 1, 30)
+      envRelease = turn;
+      env->setReleaseRate(envRelease * SAMPLERATE);
+    }
+  }
+  enc1_delta = 0;
+  enc1_pos_last = enc1_pos;
+
+  // second encoder actually first
+  int enc2_pos = enc2.getCount() / 4;
+  if ( enc2_pos != enc2_pos_last ) {
+    enc2_delta = (enc2_pos - enc2_pos_last) ;
+  }
+  if (enc2_delta) {
+    if (btn_two_state == 0 && btn_three_state == 0) {
+      float turn = ( enc2_delta * 0.01f ) + morph_in;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      morph_in = turn;
+    } else if (btn_three_state == 1 ) {
+      float turn = ( enc2_delta * 0.01f ) + envDecay;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      envDecay = turn;
+      env->setDecayRate(envDecay * SAMPLERATE);  // .01 second
+    }
+  }
+  enc2_pos_last = enc2_pos;
+  enc2_delta = 0;
+
+  // third encoder, actually second
+  int enc3_pos = enc3.getCount() / 4;
+  if ( enc3_pos != enc3_pos_last ) {
+    enc3_delta = (enc3_pos - enc3_pos_last);
+  }
+  if (enc3_delta) {
+    if (calibrating) {
+      int turn = enc3_delta + octaveOffset;
+      CONSTRAIN(turn, 0, 24)
+      octaveOffset = turn;
+    }  else if (btn_two_state == 0 && btn_three_state == 0) {
+      float turn = ( enc3_delta * 0.01f ) + harm_in;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      harm_in = turn;
+    } else if (btn_two_state == 1 && btn_three_state == 0) {
+      float turn = ( enc3_delta * 0.02f ) + global_volume;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      global_volume = turn;
+    } else if (btn_three_state == 1 ) {
+      float turn = ( enc3_delta * 0.02f ) + envSustain;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      envSustain = turn;
+      env->setSustainLevel(envSustain);
+    }
+  }
+  enc3_pos_last = enc3_pos;
+  enc3_delta = 0;
+
+
+  // meta encoder turned to cycle through voice engines
+  int enc4_pos = enc4.getPosition();
+  if ( enc4_pos != enc4_pos_last ) {
+    if (btn_three_state == 0) {
+      engineCount =  (int) enc4.getDirection()  + engineCount ;
+      if (engineCount < 0) {
+        engineCount = max_engines;
+      } else if (engineCount > max_engines) {
+        engineCount = 0;
+      }
+      engine_in = engineCount;
+    } else if (btn_three_state == 1) {
+      float turn = ( (int) enc4.getDirection() * 0.08f ) + envAttack;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      envAttack = turn;
+      env->setAttackRate(envAttack * SAMPLERATE);  // .01 second
+    }
+  }
+  enc4_pos_last = enc4_pos;
+}
+*/
 
 void read_encoders() {
 
@@ -898,7 +1008,11 @@ void read_encoders() {
   // encoder 3 does double duty
   // on timbre and position
   if ( enc1_delta) {
-    if (btn_three_state == 0 && btn_two_state == 0) {
+    if (calibrating) {
+      int turn = enc1_delta + octaveTotal;
+      CONSTRAIN(turn, 2, 10)
+      octaveTotal = turn;
+    }  else if (btn_three_state == 0 && btn_two_state == 0) {
       float turn = ( enc1_delta * 0.01f ) + timbre_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       timbre_in = turn;
@@ -946,11 +1060,19 @@ void read_encoders() {
     enc3_delta = (enc3_pos - enc3_pos_last);
   }
   if (enc3_delta) {
-    if (btn_two_state == 0) {
+    if (calibrating) {
+      int turn = enc3_delta + octaveOffset;
+      CONSTRAIN(turn, 0, 24)
+      octaveOffset = turn;
+    }  else if (btn_two_state == 0) {
       float turn = ( enc3_delta * 0.01f ) + harm_in;
       CONSTRAIN(turn, 0.f, 1.0f)
       harm_in = turn;
-    } else {
+    } else if (btn_two_state == 1 && btn_three_state == 0) {
+      float turn = ( enc3_delta * 0.02f ) + global_volume;
+      CONSTRAIN(turn, 0.f, 1.0f)
+      global_volume = turn;
+    } else if (btn_three_state == 1 ) {
       float turn = ( enc3_delta * 0.01f ) + envSustain;
       CONSTRAIN(turn, 0.f, 1.0f)
       envSustain = turn;
