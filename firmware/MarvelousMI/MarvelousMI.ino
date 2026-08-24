@@ -240,6 +240,7 @@ bool trigger_on = false;
 
 #include "Midier.h"
 // midi related functions
+bool midi_busy = false;
 #include "midi.h"
 
 #include "names.h"
@@ -357,6 +358,7 @@ void setup() {
     Serial.println(F("YUP"));
   }
 
+  Serial.begin(31250);
   // start encoders MUST be first because of PIO init?
   //pio_set_gpio_base(PIO pio1, 16); this fails, do it in begin.
   //pio_set_gpio_base(PIO pio0, 0);
@@ -411,7 +413,7 @@ void setup() {
   if (!display.begin(SSD1306_SWITCHCAPVCC, oled_i2c_addr)) {
     //if (!display.begin( oled_i2c_addr)) {
     Serial.println(F("SSD1306 allocation failed"));
-    for (;;) ;  // Don't proceed, loop forever
+    //for (;;) ;  // Don't proceed, loop forever
   }
 
   displaySplash();
@@ -519,7 +521,7 @@ void setup() {
 void loop() {
 
   if ( DAC.availableForWrite()) {
-    if ( ! writing) {
+    if ( ! writing && ! midi_busy) {
       if (voice_number == 0) {
         updatePlaitsAudio();
         // now apply the envelope
@@ -615,6 +617,7 @@ void loop1() {
       //}
     }
     read_trigger();
+
     MIDI.read();
 
     if ( now - update_timer > 5 ) {
